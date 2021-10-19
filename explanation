@@ -1,0 +1,7 @@
+AddDefaultCharset utf-8 #Ставим поумолчанию кодировку utf-8.
+RewriteEngine On #Включаем модуль перенаправлений. 
+RewriteRule (.*) public/$1 #Все запросы перенаправляем на папку public в $1.
+
+RewriteCond %{REQUEST_FILENAME} !-f #Если запрос не идет на конкретный файл.
+RewriteCond %{REQUEST_FILENAME} !-d #Если запрос не идет на конкретную папку.
+RewriteRule (.*) index.php?$1 [L,QSA] #Все запросы перенаправляем на папку public в $1. L это last - другие флаги срабатывать не должны. QSA это Qualified Security Assessors - если будут дополнительные get параметры, то они должны дополнять уже существующие.
