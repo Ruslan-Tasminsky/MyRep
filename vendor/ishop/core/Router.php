@@ -44,7 +44,7 @@ class Router
       }
    }
 
-   public static function matchRoute($url)
+   public static function matchRoute($url) //Создаем публичный статичный метод с объектом $url (который является url адресм).
    {
       foreach (self::$routes as $pattern => $route) { //Перебераем масив $routes на кличи $pattern со значением $route.
          if (preg_match("#{$pattern}#", $url, $matches)) { //Условие: функция preg_match берет шаблон $pattern и если есть совпадение с переданым url адрессом тогда помешяем его в $matches,
@@ -62,7 +62,7 @@ class Router
             } else { //В противном случаее,
                $route["prefix"] .= "\\"; //Добавляем к $route["prefix"] обратный слэш.
             }
-            $route["controller"] = self::upperCameCase($route["controller"]);
+            $route["controller"] = self::upperCameCase($route["controller"]); //Из текущего маршрута выбираем часть controller и присваеваем ей её же только уже обработаную функцией.
             self::$route = $route; //Значение $route которое мы получили в этом присваеваем текущему маршруту.
             return true;
          }

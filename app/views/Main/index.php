@@ -1,1 +1,7 @@
-<h1>Lorem ipsum dolor sit amet consectetur adipisicing elit. At quos blanditiis molestias minima earum! Fugit repellendus sit quidem neque nemo velit ad non nam, corporis accusantium, consectetur quae. Quidem, pariatur?</h1>
+<h1>Hello</h1>
+<p><?= $name; ?></p> <!-- Выводим переменную. -->
+<p><?= $age; ?></p> <!-- Выводим переменную. -->
+<?= debug($names); ?> <!-- Распичатываем масив. -->
+<?php foreach($posts as $post): ?> <!-- Перебираем таблицу бд на отдельные столбцы. -->
+    <h3><?= $post->title; ?></h3> <!-- Из таблицы бд выводим столбец title. -->
+<?php endforeach; ?> <!-- Завершаем цикл. -->   

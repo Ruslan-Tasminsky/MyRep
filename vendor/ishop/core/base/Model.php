@@ -1,15 +1,17 @@
 <?php
 
-namespace ishop\base;
+namespace ishop\base; //Прописуем пространство имен.
 
-abstract class Model
+use ishop\Db; //Используе файл с подключением к бд.
+
+abstract class Model //Создаем абстарктную модель.
 {
-   public $attributes = [];
-   public $errors = [];
-   public $rules = [];
+   public $attributes = []; //Присваеавем публичному свойству пустой масив.
+   public $errors = []; //Присваеавем публичному свойству пустой масив.
+   public $rules = []; //Присваеавем публичному свойству пустой масив.
 
-   public function __construct()
+   public function __construct() //Создаем публичный конструктор. 
    {
-      
+      Db::instance(); //Создаем объект класса Бд.
    }
 }

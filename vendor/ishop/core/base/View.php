@@ -31,8 +31,8 @@ class View
 
    public function render($data) //Публичный метод который будет формировать страницу для пользователя, также он принимает данные переданые в переменную и вызивать будем его в классе Controller.
    {
+      if(is_array($data)) extract($data); //Условие: если $datа является масивом, тогда раскрываем и получаем с него отдельные его елементы.
       $viewFile = APP . "/views/{$this->prefix}{$this->controller}/{$this->view}.php"; //Путь к файлу с видом присваеваем переменной. 
-
       if (is_file($viewFile)) { //Условие: если $viewFile является файлом,
          ob_start(); //Стартуем буферизацию.
          require_once $viewFile; //тогда подключаем его.
