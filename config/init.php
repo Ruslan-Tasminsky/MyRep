@@ -8,7 +8,7 @@ define("CORE", ROOT . "/vendor/ishop/core"); //Константа указыва
 define("LIBS", ROOT . "/vendor/ishop/core/libs"); //Константа указывает на папку libs.
 define("CACHE", ROOT . "/tmp/cache"); //Константа указывает на папку cache.
 define("CONF", ROOT . "/config"); //Константа указывает на папку config.
-define("LAYOUT", "default"); //Константа с шаблоном сайта поумолчанию (если шаблон нужно изменить, тогда меняем "default" на значение с иным шаблоном).
+define("LAYOUT", "watches"); //Константа с шаблоном сайта поумолчанию (если шаблон нужно изменить, тогда меняем "default" на значение с иным шаблоном).
 
 //http://ishop.loc/public/index.php
 $app_path = "http://{$_SERVER['HTTP_HOST']}{$_SERVER['PHP_SELF']}"; //Получаем данные из адрессной строки.
