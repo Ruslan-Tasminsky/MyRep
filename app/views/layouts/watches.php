@@ -380,8 +380,11 @@ License URL: http://creativecommons.org/licenses/by/3.0/
 			});
 		});
 	</script>
+<<<<<<< HEAD
 	<script src="js/main.js"></script>
 
+=======
+>>>>>>> 3d3dd4e16eaad49a15ca44d1ae7314d9e2825feb
 </body>
 
 </html>
