@@ -446,3 +446,69 @@
 -----------------------------------------------------------------------------------------------------------------------
 [2021-10-28 18:40:06] Текст ошибки: Controller app\controllers\CartController not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 40 
 -----------------------------------------------------------------------------------------------------------------------
+[2021-10-29 09:10:37] Текст ошибки: Page not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 43 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-29 11:15:59] Текст ошибки: Class 'app\widgets\currency\Currency' not found | Файл: E:\OpenServer\domains\ishop.loc\app\controllers\AppController.php | Строка: 15 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-29 11:30:41] Текст ошибки: Call to undefined method ishop\Registry::setProperty() | Файл: E:\OpenServer\domains\ishop.loc\app\controllers\AppController.php | Строка: 16 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-30 10:56:30] Текст ошибки: Page not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 43 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-30 11:09:32] Текст ошибки: Too few arguments to function ishop\Registry::setProperty(), 1 passed in E:\OpenServer\domains\ishop.loc\app\controllers\AppController.php on line 17 and exactly 2 expected | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Registry.php | Строка: 11 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-30 11:10:10] Текст ошибки: Too few arguments to function ishop\Registry::setProperty(), 1 passed in E:\OpenServer\domains\ishop.loc\app\controllers\AppController.php on line 17 and exactly 2 expected | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Registry.php | Строка: 11 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-30 11:13:52] Текст ошибки: Too few arguments to function ishop\Registry::setProperty(), 1 passed in E:\OpenServer\domains\ishop.loc\app\controllers\AppController.php on line 17 and exactly 2 expected | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Registry.php | Строка: 11 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 14:42:47] Текст ошибки: Page not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 43 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 15:41:08] Текст ошибки: Page not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 43 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 17:21:41] Текст ошибки: Object of class app\widgets\currency\Currency could not be converted to string | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 33 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 17:21:43] Текст ошибки: Object of class app\widgets\currency\Currency could not be converted to string | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 33 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 17:21:51] Текст ошибки: Object of class app\widgets\currency\Currency could not be converted to string | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 33 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 17:47:07] Текст ошибки: Page not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 43 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 17:47:45] Текст ошибки: Class 'Currency' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 33 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 17:47:45] Текст ошибки: Class 'Currency' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 33 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 17:47:45] Текст ошибки: Class 'Currency' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 33 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 17:47:46] Текст ошибки: Class 'Currency' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 33 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 17:47:46] Текст ошибки: Class 'Currency' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 33 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 17:50:06] Текст ошибки: Class 'Currency' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 34 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 17:50:07] Текст ошибки: Class 'Currency' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 34 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-10-31 17:50:07] Текст ошибки: Class 'Currency' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 34 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 09:23:27] Текст ошибки: Page not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 43 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 11:48:36] Текст ошибки: Method app\controllers\CurrencyController::changeAction not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 37 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 11:48:49] Текст ошибки: Method app\controllers\CurrencyController::changeAction not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 37 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 11:48:50] Текст ошибки: Method app\controllers\CurrencyController::changeAction not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 37 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 12:45:37] Текст ошибки: Method app\controllers\CurrencyController::changeAction not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 37 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 12:49:42] Текст ошибки: Method app\controllers\CurrencyController::chaAction not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 37 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 12:50:01] Текст ошибки: Method app\controllers\CurrencyController::chaAction not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 37 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 12:50:04] Текст ошибки: Method app\controllers\CurrencyController::chaAction not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 37 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 12:50:04] Текст ошибки: Method app\controllers\CurrencyController::chaAction not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 37 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 12:50:04] Текст ошибки: Method app\controllers\CurrencyController::chaAction not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 37 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 12:50:05] Текст ошибки: Method app\controllers\CurrencyController::chaAction not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 37 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 12:50:05] Текст ошибки: Method app\controllers\CurrencyController::chaAction not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 37 
+-----------------------------------------------------------------------------------------------------------------------
