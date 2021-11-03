@@ -46,6 +46,7 @@
 			<div class="product-top">
 				<div class="product-one">
 					<?php foreach ($hits as $hit) : ?>
+						<?php $curr = \ishop\App::$app->getProperty("currency"); ?>
 						<div class="col-md-3 product-left">
 							<div class="product-main simpleCart_shelfItem">
 								<a href="product/<?= $hit->alias; ?>" class="mask"><img class="img-responsive zoom-img" src="images/<?= $hit->img; ?>" alt="" /></a>
@@ -53,15 +54,15 @@
 									<h3><a href="product/<?= $hit->alias; ?>"><?= $hit->title; ?></a></h3>
 									<p>Explore Now</p>
 									<h4>
-										<a data-id="<?= $hit->id; ?>" class="add-to-cart-link" href="cart/add?id=<?= $hit->id; ?>"><i></i></a> <span class=" item_price">$<?= $hit->price; ?></span>
+										<a data-id="<?= $hit->id; ?>" class="add-to-cart-link" href="cart/add?id=<?= $hit->id; ?>"><i></i></a><span class=" item_price"><?= $curr["symbol_left"] ?><?= (int) ($hit->price * $curr["value"]); ?><?= $curr["symbol_right"] ?></span>
 										<?php if ($hit->old_price) : ?>
-											<small><del><?= $hit->old_price; ?></del></small>
+											<small><del><?= $curr["symbol_left"] ?><?= (int) ($hit->old_price * $curr["value"]); ?><?= $curr["symbol_right"] ?></del></small>
 										<?php endif; ?>
 									</h4>
 								</div>
 								<div class="srch">
-								<?php if ($hit->old_price) {?>	
-										<span><?=(int)(100 - $hit->price / $hit->old_price * 100) ?>%</span>
+									<?php if ($hit->old_price) { ?>
+										<span><?= -(int)(100 - $hit->price / $hit->old_price * 100) ?>%</span>
 									<?php } else { ?>
 										<span>-</span>
 									<?php } ?>

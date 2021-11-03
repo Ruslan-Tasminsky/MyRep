@@ -1,0 +1,76 @@
+[2021-11-01 15:58:54] Текст ошибки: syntax error, unexpected '?>' | Файл: E:\OpenServer\domains\ishop.loc\app\views\Main\index.php | Строка: 67 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 16:07:17] Текст ошибки: Page not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 43 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 16:23:10] Текст ошибки: syntax error, unexpected 'endforeach' (T_ENDFOREACH) | Файл: E:\OpenServer\domains\ishop.loc\app\views\Main\index.php | Строка: 75 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 16:24:19] Текст ошибки: syntax error, unexpected end of file | Файл: E:\OpenServer\domains\ishop.loc\app\views\Main\index.php | Строка: 83 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 16:24:20] Текст ошибки: syntax error, unexpected end of file | Файл: E:\OpenServer\domains\ishop.loc\app\views\Main\index.php | Строка: 83 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 16:24:20] Текст ошибки: syntax error, unexpected end of file | Файл: E:\OpenServer\domains\ishop.loc\app\views\Main\index.php | Строка: 83 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 16:24:21] Текст ошибки: syntax error, unexpected end of file | Файл: E:\OpenServer\domains\ishop.loc\app\views\Main\index.php | Строка: 83 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 16:24:21] Текст ошибки: syntax error, unexpected end of file | Файл: E:\OpenServer\domains\ishop.loc\app\views\Main\index.php | Строка: 83 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 16:35:44] Текст ошибки: syntax error, unexpected ';' | Файл: E:\OpenServer\domains\ishop.loc\app\views\Main\index.php | Строка: 57 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:16:40] Текст ошибки: Class 'app\widgets\menu\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 77 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:17:39] Текст ошибки: Class 'app\widgets\menu\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 77 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:25:28] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:25:31] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:25:32] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:25:32] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:25:32] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:25:52] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:26:33] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:26:34] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:26:34] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:26:34] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:26:34] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:26:34] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:26:35] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-01 17:26:45] Текст ошибки: Class 'app\widgets\Menu' not found | Файл: E:\OpenServer\domains\ishop.loc\app\views\layouts\watches.php | Строка: 81 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-02 11:42:50] Текст ошибки: Page not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 43 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-02 15:47:16] Текст ошибки: Page not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 43 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-02 17:13:33] Текст ошибки: Controller app\controllers\CategoryController not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 40 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-02 17:14:05] Текст ошибки: Controller app\controllers\CategoryController not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 40 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-02 17:14:08] Текст ошибки: Controller app\controllers\CategoryController not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 40 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-03 09:28:36] Текст ошибки: Page not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 43 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-03 09:30:12] Текст ошибки: Page not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 43 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-03 09:31:50] Текст ошибки: Page not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 43 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-03 10:46:46] Текст ошибки: Controller app\controllers\CategoryController not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 40 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-03 17:23:05] Текст ошибки: Page not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 43 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-03 18:02:52] Текст ошибки: syntax error, unexpected '=>' (T_DOUBLE_ARROW) | Файл: E:\OpenServer\domains\ishop.loc\app\widgets\menu\Menu.php | Строка: 62 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-03 19:29:54] Текст ошибки: Controller app\controllers\CategoryController not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 40 
+-----------------------------------------------------------------------------------------------------------------------
+[2021-11-03 19:30:11] Текст ошибки: Controller app\controllers\CategoryController not found | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 40 
+-----------------------------------------------------------------------------------------------------------------------
