@@ -61,11 +61,11 @@
 									</h4>
 								</div>
 								<div class="srch">
-									<?php if ($hit->old_price) { ?>
+									<?php if ($hit->old_price) : ?>
 										<span><?= -(int)(100 - $hit->price / $hit->old_price * 100) ?>%</span>
-									<?php } else { ?>
+									<?php else : ?>
 										<span>-</span>
-									<?php } ?>
+									<?php endif; ?>
 								</div>
 							</div>
 						</div>

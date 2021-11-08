@@ -17,19 +17,19 @@
 				<div class="col-md-9 single-main-left">
 					<div class="sngl-top">
 						<div class="col-md-5 single-top-left">
-							<div class="flexslider">
-								<ul class="slides">
-									<li data-thumb="images/s-1.jpg">
-										<div class="thumb-image"> <img src="images/s-1.jpg" data-imagezoom="true" class="img-responsive" alt="" /> </div>
-									</li>
-									<li data-thumb="images/s-2.jpg">
-										<div class="thumb-image"> <img src="images/s-2.jpg" data-imagezoom="true" class="img-responsive" alt="" /> </div>
-									</li>
-									<li data-thumb="images/s-3.jpg">
-										<div class="thumb-image"> <img src="images/s-3.jpg" data-imagezoom="true" class="img-responsive" alt="" /> </div>
-									</li>
-								</ul>
-							</div>
+							<?php if ($gallery) : ?>
+								<div class="flexslider">
+									<ul class="slides">
+										<?php foreach ($gallery as $item) : ?>
+											<li data-thumb="images/<?= $item->img; ?>">
+												<div class="thumb-image"> <img src="images/<?= $item->img; ?>" data-imagezoom="true" class="img-responsive" alt="" /> </div>
+											</li>
+										<?php endforeach; ?>
+									</ul>
+								</div>
+							<?php else : ?>
+								<img src="images/<?= $product->img; ?>" alt="">
+							<?php endif; ?>
 							<!-- FlexSlider -->
 						</div>
 						<?php $curr = \ishop\App::$app->getProperty("currency"); ?>
@@ -52,7 +52,7 @@
 									<div class="clearfix"> </div>
 								</div>
 
-								<h5 class="item_price"><?= $curr["symbol_left"] ?><?= $product->price * $curr["value"]; ?><?= $curr["symbol_right"] ?></h5>
+								<h5 class="item_price"><?= $curr["symbol_left"] ?><?= (int) $product->price * $curr["value"]; ?><?= $curr["symbol_right"] ?></h5>
 								<?php if ($product->old_price) : ?>
 									<del><?= $curr["symbol_left"] ?><?= (int) ($product->old_price * $curr["value"]); ?><?= $curr["symbol_right"] ?></del>
 								<?php endif; ?>
@@ -140,14 +140,37 @@
 												<p>Explore Now</p>
 												<h4>
 													<a class="item_add add-to-cart-link" href="cart/add?id=<?= $item["id"]; ?>" data-id="<?= $item["id"]; ?>"><i></i></a>
-													<span class="item_price"><?= $curr["symbol_left"]; ?><?= $item["price"] * $curr["value"]; ?><?= $curr["symbol_right"]; ?></span>
+													<span class="item_price"><?= $curr["symbol_left"]; ?><?= (int) $item["price"] * $curr["value"]; ?><?= $curr["symbol_right"]; ?></span></br>
 													<?php if ($item["old_price"]) : ?>
-														<del><?= $curr["symbol_left"]; ?><?= $item["old_price"] * $curr["value"]; ?><?= $curr["symbol_right"]; ?></del>
+														<small><del><?= $curr["symbol_left"]; ?><?= (int) $item["old_price"] * $curr["value"]; ?><?= $curr["symbol_right"]; ?></del></small>
 													<?php endif; ?>
 												</h4>
 											</div>
-											<div class="srch">
-												<span>-50%</span>
+										</div>
+									</div>
+								<?php endforeach; ?>
+								<div class="clearfix"></div>
+							</div>
+						</div>
+					<?php endif; ?>
+					<?php if ($recentlyViewed) : ?>
+						<div class="latestproducts">
+							<div class="product-one">
+								<h3>Recently viewed:</h3>
+								<?php foreach ($recentlyViewed as $item) : ?>
+									<div class="col-md-4 product-left p-left">
+										<div class="product-main simpleCart_shelfItem">
+											<a href="product/<?= $item["alias"]; ?>" class="mask"><img class="img-responsive zoom-img" src="images/<?= $item["img"]; ?>" alt="" /></a>
+											<div class="product-bottom">
+												<h3><a href="product/<?= $item["alias"]; ?>"><?= $item["title"]; ?></a></h3>
+												<p>Explore Now</p>
+												<h4>
+													<a class="item_add add-to-cart-link" href="cart/add?id=<?= $item["id"]; ?>" data-id="<?= $item["id"]; ?>"><i></i></a>
+													<span class="item_price"><?= $curr["symbol_left"]; ?><?= (int) $item["price"] * $curr["value"]; ?><?= $curr["symbol_right"]; ?></span></br>
+													<?php if ($item["old_price"]) : ?>
+														<small><del><?= $curr["symbol_left"]; ?><?= (int) $item["old_price"] * $curr["value"]; ?><?= $curr["symbol_right"]; ?></del></small>
+													<?php endif; ?>
+												</h4>
 											</div>
 										</div>
 									</div>

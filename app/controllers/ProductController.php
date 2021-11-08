@@ -2,6 +2,8 @@
 
 namespace app\controllers;
 
+use app\models\ProductModel;
+
 class ProductController extends AppController
 {
     public function viewAction()
@@ -12,7 +14,15 @@ class ProductController extends AppController
             throw new \Exception('Страница не найдена', 404);
         }
         $related = \R::getAll("SELECT * FROM related_product JOIN product ON product.id = related_product.related_id WHERE related_product.product_id = ?", [$product->id]);
+        $p_model = new ProductModel();
+        $p_model->setRecentlyViewed($product->id);
+        $r_viewed = $p_model->getRecentlyViewed();
+        $recentlyViewed = null;
+        if($r_viewed) {
+            $recentlyViewed = \R::find("product", "id IN (" . \R::genSlots($r_viewed) . ") LIMIT 3", $r_viewed);
+        }
+        $gallery = \R::findAll("gallery", "product_id = ?", [$product->id]);
         $this->setMeta($product->title, $product->descripton, $product->keywords);
-        $this->set(compact("product", "related"));
+        $this->set(compact("product", "related", "gallery", "recentlyViewed"));
     }
 }
