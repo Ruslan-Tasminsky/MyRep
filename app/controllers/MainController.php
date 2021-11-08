@@ -11,7 +11,7 @@ class MainController extends AppController //Создаем класс кото�
    {
       $brands = \R::find("brand", "LIMIT 3"); //Из бд выбираем таблицу и первых 3 елемента.
       $hits = \R::find("product", "hit = '1' AND status = '1' LIMIT 8"); //Из бд выбираем таблицу и первых 3 елемента.
-      $this->setMeta(App::$app->getProperty('shop_name'), "Home page", "description", "keywords"); //В функцию базавого контроллера записываем данные.
+      $this->setMeta(App::$app->getProperty("shop_name"), "Home page", "description", "keywords"); //В функцию базавого контроллера записываем данные.
       $this->set(compact("brands", "hits")); //компактируем и отправляем в вид масив.
    }
 }
