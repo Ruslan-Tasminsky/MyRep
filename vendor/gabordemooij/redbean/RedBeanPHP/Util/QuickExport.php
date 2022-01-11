@@ -29,11 +29,6 @@ class QuickExport
 	protected $toolbox;
 
 	/**
-	 * @boolean
-	 */
-	private static $test = FALSE;
-
-	/**
 	 * Constructor.
 	 * The Quick Export requires a toolbox.
 	 *
@@ -45,43 +40,18 @@ class QuickExport
 	}
 
 	/**
-	 * Makes csv() testable.
-	 */
-	public static function operation( $name, $arg1, $arg2 = TRUE ) {
-		$out = '';
-		switch( $name ) {
-			case 'test':
-				self::$test = (boolean) $arg1;
-				break;
-			case 'header':
-				$out = ( self::$test ) ? $arg1 : header( $arg1, $arg2 );
-				break;
-			case 'readfile':
-				$out = ( self::$test ) ? file_get_contents( $arg1 ) : readfile( $arg1 );
-				break;
-			case 'exit':
-				$out = ( self::$test ) ? 'exit' : exit();
-				break;
-		}
-		return $out;
-	}
-
-	/**
 	 * Exposes the result of the specified SQL query as a CSV file.
-	 *
 	 * Usage:
 	 *
-	 * <code>
 	 * R::csv( 'SELECT
-	 *   `name`,
-	 *   population
-	 *   FROM city
-	 *   WHERE region = :region ',
-	 *   array( ':region' => 'Denmark' ),
-	 *   array( 'city', 'population' ),
-	 *   '/tmp/cities.csv'
+	 *                 `name`,
+	 *                  population
+	 *          FROM city
+	 *          WHERE region = :region ',
+	 *          array( ':region' => 'Denmark' ),
+	 *          array( 'city', 'population' ),
+	 *          '/tmp/cities.csv'
 	 * );
-	 * </code>
 	 *
 	 * The command above will select all cities in Denmark
 	 * and create a CSV with columns 'city' and 'population' and
@@ -97,30 +67,29 @@ class QuickExport
 	 *
 	 * @return void
 	 */
-	public function csv( $sql = '', $bindings = array(), $columns = NULL, $path = '/tmp/redexport_%s.csv', $output = TRUE, $options = array(',','"','\\') )
+	public function csv( $sql = '', $bindings = array(), $columns = NULL, $path = '/tmp/redexport_%s.csv', $output = true, $options = array(',','"','\\') )
 	{
 		list( $delimiter, $enclosure, $escapeChar ) = $options;
 		$path = sprintf( $path, date('Ymd_his') );
 		$handle = fopen( $path, 'w' );
-		if ($columns) if (PHP_VERSION_ID>=505040) fputcsv($handle, $columns, $delimiter, $enclosure, $escapeChar ); else fputcsv($handle, $columns, $delimiter, $enclosure );
+		if ($columns) fputcsv($handle, $columns, $delimiter, $enclosure, $escapeChar );
 		$cursor = $this->toolbox->getDatabaseAdapter()->getCursor( $sql, $bindings );
 		while( $row = $cursor->getNextItem() ) {
-			if (PHP_VERSION_ID>=505040) fputcsv($handle, $row, $delimiter, $enclosure, $escapeChar ); else fputcsv($handle, $row, $delimiter, $enclosure );
+			fputcsv($handle, $row, $delimiter, $enclosure, $escapeChar );
 		}
 		fclose($handle);
 		if ( $output ) {
 			$file = basename($path);
-			$out = self::operation('header',"Pragma: public");
-			$out .= self::operation('header',"Expires: 0");
-			$out .= self::operation('header',"Cache-Control: must-revalidate, post-check=0, pre-check=0");
-			$out .= self::operation('header',"Cache-Control: private", FALSE );
-			$out .= self::operation('header',"Content-Type: text/csv");
-			$out .= self::operation('header',"Content-Disposition: attachment; filename={$file}" );
-			$out .= self::operation('header',"Content-Transfer-Encoding: binary");
-			$out .= self::operation('readfile',$path );
+			header("Pragma: public");
+			header("Expires: 0");
+			header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+			header("Cache-Control: private",false);
+			header("Content-Type: text/csv");
+			header("Content-Disposition: attachment; filename={$file}" );
+			header("Content-Transfer-Encoding: binary");
+			readfile( $path );
 			@unlink( $path );
-			self::operation('exit', FALSE);
-			return $out;
+			exit;
 		}
 	}
 }

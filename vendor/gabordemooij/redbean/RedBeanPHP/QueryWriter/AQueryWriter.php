@@ -41,22 +41,17 @@ abstract class AQueryWriter
 	/**
 	 * @var boolean
 	 */
-	private static $flagSQLFilterSafeMode = FALSE;
+	private static $flagSQLFilterSafeMode = false;
 
 	/**
 	 * @var boolean
 	 */
-	private static $flagNarrowFieldMode = TRUE;
+	private static $flagNarrowFieldMode = true;
 
 	/**
 	 * @var boolean
 	 */
 	protected static $flagUseJSONColumns = FALSE;
-
-	/**
-	 * @var boolean
-	 */
-	protected static $enableISNULLConditions = FALSE;
 
 	/**
 	 * @var array
@@ -104,80 +99,6 @@ abstract class AQueryWriter
 	public $typeno_sqltype = array();
 
 	/**
-	 * @var bool
-	 */
-	protected static $noNuke = false;
-
-	/**
-	 * Sets a data definition template to change the data
-	 * creation statements per type.
-	 *
-	 * For instance to add  ROW_FORMAT=DYNAMIC to all MySQL tables
-	 * upon creation:
-	 *
-	 * <code>
-	 * $sql = $writer->getDDLTemplate( 'createTable', '*' );
-	 * $writer->setDDLTemplate( 'createTable', '*', $sql . '  ROW_FORMAT=DYNAMIC ' );
-	 * </code>
-	 *
-	 * For property-specific templates set $beanType to:
-	 * account.username -- then the template will only be applied to SQL statements relating
-	 * to that column/property.
-	 *
-	 * @param string $type     ( 'createTable' | 'widenColumn' | 'addColumn' )
-	 * @param string $beanType ( type of bean or '*' to apply to all types )
-	 * @param string $template SQL template, contains %s for slots
-	 *
-	 * @return void
-	 */
-	public function setDDLTemplate( $type, $beanType, $template )
-	{
-		$this->DDLTemplates[ $type ][ $beanType ] = $template;
-	}
-
-	/**
-	 * Returns the specified data definition template.
-	 * If no template can be found for the specified type, the template for
-	 * '*' will be returned instead.
-	 *
-	 * @param string $type     ( 'createTable' | 'widenColumn' | 'addColumn' )
-	 * @param string $beanType ( type of bean or '*' to apply to all types )
-	 * @param string $property specify if you're looking for a property-specific template
-	 *
-	 * @return string
-	 */
-	public function getDDLTemplate( $type, $beanType = '*', $property = NULL )
-	{
-		$key = ( $property ) ? "{$beanType}.{$property}" : $beanType;
-		if ( isset( $this->DDLTemplates[ $type ][ $key ] ) ) {
-			return $this->DDLTemplates[ $type ][ $key ];
-		}
-		if ( isset( $this->DDLTemplates[ $type ][ $beanType ] ) ) {
-			return $this->DDLTemplates[ $type ][ $beanType ];
-		}
-		return $this->DDLTemplates[ $type ][ '*' ];
-	}
-
-	/**
-	 * Toggles support for IS-NULL-conditions.
-	 * If IS-NULL-conditions are enabled condition arrays
-	 * for functions including findLike() are treated so that
-	 * 'field' => NULL will be interpreted as field IS NULL
-	 * instead of being skipped. Returns the previous
-	 * value of the flag.
-	 *
-	 * @param boolean $flag TRUE or FALSE
-	 *
-	 * @return boolean
-	 */
-	public static function useISNULLConditions( $flag )
-	{
-		$old = self::$enableISNULLConditions;
-		self::$enableISNULLConditions = $flag;
-		return $old;
-	}
-
-	/**
 	 * Toggles support for automatic generation of JSON columns.
 	 * Using JSON columns means that strings containing JSON will
 	 * cause the column to be created (not modified) as a JSON column.
@@ -193,21 +114,6 @@ abstract class AQueryWriter
 	{
 		$old = self::$flagUseJSONColumns;
 		self::$flagUseJSONColumns = $flag;
-		return $old;
-	}
-
-	/**
-	 * Toggles support for nuke().
-	 * Can be used to turn off the nuke() feature for security reasons.
-	 * Returns the old flag value.
-	 *
-	 * @param boolean $flag TRUE or FALSE
-	 *
-	 * @return boolean
-	 */
-	public static function forbidNuke( $flag ) {
-		$old = self::$noNuke;
-		self::$noNuke = (bool) $flag;
 		return $old;
 	}
 
@@ -253,32 +159,13 @@ abstract class AQueryWriter
 	 * Globally available service method for RedBeanPHP.
 	 * Converts a camel cased string to a snake cased string.
 	 *
-	 * @param string $camel camelCased string to convert to snake case
+	 * @param string $camel camelCased string to converty to snake case
 	 *
 	 * @return string
 	 */
 	public static function camelsSnake( $camel )
 	{
 		return strtolower( preg_replace( '/(?<=[a-z])([A-Z])|([A-Z])(?=[a-z])/', '_$1$2', $camel ) );
-	}
-
-	/**
-	 * Globally available service method for RedBeanPHP.
-	 * Converts a snake cased string to a camel cased string.
-	 *
-	 * @param string  $snake   snake_cased string to convert to camelCase
-	 * @param boolean $dolphin exception for Ids - (bookId -> bookID)
-	 *                         too complicated for the human mind, only dolphins can understand this
-	 *
-	 * @return string
-	 */
-	public static function snakeCamel( $snake, $dolphinMode = false )
-	{
-		$camel = lcfirst( str_replace(' ', '', ucwords( str_replace('_', ' ', $snake ) ) ) );
-		if ( $dolphinMode ) {
-			$camel = preg_replace( '/(\w)Id$/', '$1ID', $camel );
-		}
-		return $camel;
 	}
 
 	/**
@@ -306,7 +193,6 @@ abstract class AQueryWriter
 	 * more flexibility (for instance joins). However if you need
 	 * the wide selector for backward compatibility; use this method
 	 * to turn OFF Narrow Field Mode by passing FALSE.
-	 * Default is TRUE.
 	 *
 	 * @param boolean $narrowField TRUE = Narrow Field FALSE = Wide Field
 	 *
@@ -352,7 +238,7 @@ abstract class AQueryWriter
 	 *
 	 * @return void
 	 */
-	public static function setSQLFilters( $sqlFilters, $safeMode = FALSE )
+	public static function setSQLFilters( $sqlFilters, $safeMode = false )
 	{
 		self::$flagSQLFilterSafeMode = (boolean) $safeMode;
 		self::$sqlFilters = $sqlFilters;
@@ -396,6 +282,7 @@ abstract class AQueryWriter
 	private function getCached( $cacheTag, $key )
 	{
 		$sql = $this->adapter->getSQL();
+
 		if ($this->updateCache()) {
 			if ( isset( $this->cache[$cacheTag][$key] ) ) {
 				return $this->cache[$cacheTag][$key];
@@ -451,6 +338,7 @@ abstract class AQueryWriter
 		} else {
 			$this->cache[$cacheTag] = array();
 		}
+
 		$this->cache[$cacheTag][$key] = $values;
 	}
 
@@ -480,26 +368,12 @@ abstract class AQueryWriter
 
 		$sqlConditions = array();
 		foreach ( $conditions as $column => $values ) {
-			if ( $values === NULL ) {
-				if ( self::$enableISNULLConditions ) {
-					$sqlConditions[] = $this->esc( $column ) . ' IS NULL';
-				}
-				continue;
-			}
-
-			if ( is_array( $values ) ) {
-				if ( empty( $values ) ) continue;
-			} else {
-				$values = array( $values );
-			}
-
-			$checkOODB = reset( $values );
-			if ( $checkOODB instanceof OODBBean && $checkOODB->getMeta( 'type' ) === $column && substr( $column, -3 ) != '_id' )
-				$column = $column . '_id';
-
+			if ( !count( $values ) ) continue;
 
 			$sql = $this->esc( $column );
 			$sql .= ' IN ( ';
+
+			if ( !is_array( $values ) ) $values = array( $values );
 
 			if ( $paramTypeIsNum ) {
 				$sql .= implode( ',', array_fill( 0, count( $values ), '?' ) ) . ' ) ';
@@ -507,9 +381,6 @@ abstract class AQueryWriter
 				array_unshift($sqlConditions, $sql);
 
 				foreach ( $values as $k => $v ) {
-					if ( $v instanceof OODBBean ) {
-						$v = $v->id;
-					}
 					$values[$k] = strval( $v );
 
 					array_unshift( $bindings, $v );
@@ -519,9 +390,6 @@ abstract class AQueryWriter
 				$slots = array();
 
 				foreach( $values as $k => $v ) {
-					if ( $v instanceof OODBBean ) {
-						$v = $v->id;
-					}
 					$slot            = ':slot'.$counter++;
 					$slots[]         = $slot;
 					$bindings[$slot] = strval( $v );
@@ -533,12 +401,14 @@ abstract class AQueryWriter
 		}
 
 		$sql = '';
-		if ( !empty( $sqlConditions ) ) {
-			$sql .= " WHERE ( " . implode( ' AND ', $sqlConditions ) . ") ";
-		}
+		if ( is_array( $sqlConditions ) && count( $sqlConditions ) > 0 ) {
+			$sql = implode( ' AND ', $sqlConditions );
+			$sql = " WHERE ( $sql ) ";
 
-		$addSql = $this->glueSQLCondition( $addSql, !empty( $sqlConditions ) ? QueryWriter::C_GLUE_AND : NULL );
-		if ( $addSql ) $sql .= $addSql;
+			if ( $addSql ) $sql .= $addSql;
+		} elseif ( $addSql ) {
+			$sql = $addSql;
+		}
 
 		return $sql;
 	}
@@ -896,7 +766,7 @@ abstract class AQueryWriter
 	 */
 	public function glueLimitOne( $sql = '')
 	{
-		return ( strpos( strtoupper( ' ' . $sql ), ' LIMIT ' ) === FALSE ) ? ( $sql . ' LIMIT 1 ' ) : $sql;
+		return ( strpos( strtoupper( $sql ), 'LIMIT' ) === FALSE ) ? ( $sql . ' LIMIT 1 ' ) : $sql;
 	}
 
 	/**
@@ -912,16 +782,16 @@ abstract class AQueryWriter
 	/**
 	 * @see QueryWriter::addColumn
 	 */
-	public function addColumn( $beanType, $column, $field )
+	public function addColumn( $type, $column, $field )
 	{
-		$table  = $beanType;
+		$table  = $type;
 		$type   = $field;
 		$table  = $this->esc( $table );
 		$column = $this->esc( $column );
 
 		$type = ( isset( $this->typeno_sqltype[$type] ) ) ? $this->typeno_sqltype[$type] : '';
 
-		$this->adapter->exec( sprintf( $this->getDDLTemplate('addColumn', $beanType, $column ), $table, $column, $type ) );
+		$this->adapter->exec( "ALTER TABLE $table ADD $column $type " );
 	}
 
 	/**
@@ -973,205 +843,17 @@ abstract class AQueryWriter
 	}
 
 	/**
-	 * @see QueryWriter::parseJoin
-	 */
-	public function parseJoin( $type, $sql, $cteType = NULL )
-	{
-		if ( strpos( $sql, '@' ) === FALSE ) {
-			return $sql;
-		}
-
-		$sql = ' ' . $sql;
-		$joins = array();
-		$joinSql = '';
-
-		if ( !preg_match_all( '#@((shared|own|joined)\.[^\s(,=!?]+)#', $sql, $matches ) )
-			return $sql;
-
-		$expressions = $matches[1];
-		// Sort to make the joins from the longest to the shortest
-		uasort( $expressions, function($a, $b) {
-			return substr_count( $b, '.' ) - substr_count( $a, '.' );
-		});
-
-		$nsuffix = 1;
-		foreach ( $expressions as $exp ) {
-			$explosion = explode( '.', $exp );
-			$joinTable = $type;
-			$joinType  = array_shift( $explosion );
-			$lastPart  = array_pop( $explosion );
-			$lastJoin  = end($explosion);
-			if ( ( $index = strpos( $lastJoin, '[' ) ) !== FALSE ) {
-				$lastJoin = substr( $lastJoin, 0, $index);
-			}
-			reset($explosion);
-
-			// Let's check if we already joined that chain
-			// If that's the case we skip this
-			$joinKey  = implode( '.', $explosion );
-			foreach ( $joins as $chain => $suffix ) {
-				if ( strpos ( $chain, $joinKey ) === 0 ) {
-					$sql = str_replace( "@{$exp}", "{$lastJoin}__rb{$suffix}.{$lastPart}", $sql );
-					continue 2;
-				}
-			}
-			$sql = str_replace( "@{$exp}", "{$lastJoin}__rb{$nsuffix}.{$lastPart}", $sql );
-			$joins[$joinKey] = $nsuffix;
-
-			// We loop on the elements of the join
-			$i = 0;
-			while ( TRUE ) {
-				$joinInfo = $explosion[$i];
-				if ( $i ) {
-					$joinType = $explosion[$i-1];
-					$joinTable = $explosion[$i-2];
-				}
-
-				$aliases = array();
-				if ( ( $index = strpos( $joinInfo, '[' ) ) !== FALSE ) {
-					if ( preg_match_all( '#(([^\s:/\][]+)[/\]])#', $joinInfo, $matches ) ) {
-						$aliases = $matches[2];
-						$joinInfo = substr( $joinInfo, 0, $index);
-					}
-				}
-				if ( ( $index = strpos( $joinTable, '[' ) ) !== FALSE ) {
-					$joinTable = substr( $joinTable, 0, $index);
-				}
-
-				if ( $i ) {
-					$joinSql .= $this->writeJoin( $joinTable, $joinInfo, 'INNER', $joinType, FALSE, "__rb{$nsuffix}", $aliases, NULL );
-				} else {
-					$joinSql .= $this->writeJoin( $joinTable, $joinInfo, 'LEFT', $joinType, TRUE, "__rb{$nsuffix}", $aliases, $cteType );
-				}
-
-				$i += 2;
-				if ( !isset( $explosion[$i] ) ) {
-					break;
-				}
-			}
-			$nsuffix++;
-		}
-
-		$sql = str_ireplace( ' where ', ' WHERE ', $sql );
-		if ( strpos( $sql, ' WHERE ') === FALSE ) {
-			if ( preg_match( '/^(ORDER|GROUP|HAVING|LIMIT|OFFSET)\s+/i', trim($sql) ) ) {
-				$sql = "{$joinSql} {$sql}";
-			} else {
-				$sql = "{$joinSql} WHERE {$sql}";
-			}
-		} else {
-			$sqlParts = explode( ' WHERE ', $sql, 2 );
-			$sql = "{$sqlParts[0]} {$joinSql} WHERE {$sqlParts[1]}";
-		}
-
-		return $sql;
-	}
-
-	/**
 	 * @see QueryWriter::writeJoin
 	 */
-	public function writeJoin( $type, $targetType, $leftRight = 'LEFT', $joinType = 'parent', $firstOfChain = TRUE, $suffix = '', $aliases = array(), $cteType = NULL )
+	public function writeJoin( $type, $targetType, $leftRight = 'LEFT' )
 	{
 		if ( $leftRight !== 'LEFT' && $leftRight !== 'RIGHT' && $leftRight !== 'INNER' )
 			throw new RedException( 'Invalid JOIN.' );
 
-		$globalAliases = OODBBean::getAliases();
-		if ( isset( $globalAliases[$targetType] ) ) {
-			$destType      = $globalAliases[$targetType];
-			$asTargetTable = $this->esc( $targetType.$suffix );
-		} else {
-			$destType      = $targetType;
-			$asTargetTable = $this->esc( $destType.$suffix );
-		}
-
-		if ( $firstOfChain ) {
-			$table = $this->esc( $type );
-		} else {
-			$table = $this->esc( $type.$suffix );
-		}
-		$targetTable = $this->esc( $destType );
-
-		if ( $joinType == 'shared' ) {
-
-			if ( isset( $globalAliases[$type] ) ) {
-				$field      = $this->esc( $globalAliases[$type], TRUE );
-				if ( $aliases && count( $aliases ) === 1 ) {
-					$assocTable = reset( $aliases );
-				} else {
-					$assocTable = $this->getAssocTable( array( $cteType ? $cteType : $globalAliases[$type], $destType ) );
-				}
-			} else {
-				$field      = $this->esc( $type, TRUE );
-				if ( $aliases && count( $aliases ) === 1 ) {
-					$assocTable = reset( $aliases );
-				} else {
-					$assocTable = $this->getAssocTable( array( $cteType ? $cteType : $type, $destType ) );
-				}
-			}
-			$linkTable      = $this->esc( $assocTable );
-			$asLinkTable    = $this->esc( $assocTable.$suffix );
-			$leftField      = "id";
-			$rightField     = $cteType ? "{$cteType}_id" : "{$field}_id";
-			$linkField      = $this->esc( $destType, TRUE );
-			$linkLeftField  = "id";
-			$linkRightField = "{$linkField}_id";
-
-			$joinSql = " {$leftRight} JOIN {$linkTable}";
-			if ( isset( $globalAliases[$targetType] ) || $suffix ) {
-				$joinSql .= " AS {$asLinkTable}";
-			}
-			$joinSql .= " ON {$table}.{$leftField} = {$asLinkTable}.{$rightField}";
-			$joinSql .= " {$leftRight} JOIN {$targetTable}";
-			if ( isset( $globalAliases[$targetType] ) || $suffix ) {
-				$joinSql .= " AS {$asTargetTable}";
-			}
-			$joinSql .= " ON {$asTargetTable}.{$linkLeftField} = {$asLinkTable}.{$linkRightField}";
-
-		} elseif ( $joinType == 'own' ) {
-
-			$field      = $this->esc( $type, TRUE );
-			$rightField = "id";
-
-			$joinSql = " {$leftRight} JOIN {$targetTable}";
-			if ( isset( $globalAliases[$targetType] ) || $suffix ) {
-				$joinSql .= " AS {$asTargetTable}";
-			}
-
-			if ( $aliases ) {
-				$conditions = array();
-				foreach ( $aliases as $alias ) {
-					$conditions[] = "{$asTargetTable}.{$alias}_id = {$table}.{$rightField}";
-				}
-				$joinSql .= " ON ( " . implode( ' OR ', $conditions ) . " ) ";
-			} else {
-				$leftField  = $cteType ? "{$cteType}_id" : "{$field}_id";
-				$joinSql .= " ON {$asTargetTable}.{$leftField} = {$table}.{$rightField} ";
-			}
-
-		} else {
-
-			$field      = $this->esc( $targetType, TRUE );
-			$leftField  = "id";
-
-			$joinSql = " {$leftRight} JOIN {$targetTable}";
-			if ( isset( $globalAliases[$targetType] ) || $suffix ) {
-				$joinSql .= " AS {$asTargetTable}";
-			}
-
-			if ( $aliases ) {
-				$conditions = array();
-				foreach ( $aliases as $alias ) {
-					$conditions[] = "{$asTargetTable}.{$leftField} = {$table}.{$alias}_id";
-				}
-				$joinSql .= " ON ( " . implode( ' OR ', $conditions ) . " ) ";
-			} else {
-				$rightField = "{$field}_id";
-				$joinSql .= " ON {$asTargetTable}.{$leftField} = {$table}.{$rightField} ";
-			}
-
-		}
-
-		return $joinSql;
+		$table = $this->esc( $type );
+		$targetTable = $this->esc( $targetType );
+		$field = $this->esc( $targetType, TRUE );
+		return " {$leftRight} JOIN {$targetTable} ON {$targetTable}.id = {$table}.{$field}_id ";
 	}
 
 	/**
@@ -1198,8 +880,12 @@ abstract class AQueryWriter
 	 */
 	public function queryRecord( $type, $conditions = array(), $addSql = NULL, $bindings = array() )
 	{
-		if ( $this->flagUseCache && $this->sqlSelectSnippet != self::C_SELECT_SNIPPET_FOR_UPDATE ) {
-			$key = $this->getCacheKey( array( $conditions, trim("$addSql {$this->sqlSelectSnippet}"), $bindings, 'select' ) );
+		$addSql = $this->glueSQLCondition( $addSql, ( count($conditions) > 0) ? QueryWriter::C_GLUE_AND : NULL );
+
+		$key = NULL;
+		if ( $this->flagUseCache ) {
+			$key = $this->getCacheKey( array( $conditions, "$addSql {$this->sqlSelectSnippet}", $bindings, 'select' ) );
+
 			if ( $cached = $this->getCached( $type, $key ) ) {
 				return $cached;
 			}
@@ -1211,19 +897,12 @@ abstract class AQueryWriter
 		if ( count( self::$sqlFilters ) ) {
 			$sqlFilterStr = $this->getSQLFilterSnippet( $type );
 		}
-
-		if ( is_array ( $conditions ) && !empty ( $conditions ) ) {
-			$sql = $this->makeSQLFromConditions( $conditions, $bindings, $addSql );
-		} else {
-			$sql = $this->glueSQLCondition( $addSql );
-		}
-		$sql = $this->parseJoin( $type, $sql );
-		$fieldSelection = self::$flagNarrowFieldMode ? "{$table}.*" : '*';
+		$sql   = $this->makeSQLFromConditions( $conditions, $bindings, $addSql );
+		$fieldSelection = ( self::$flagNarrowFieldMode ) ? "{$table}.*" : '*';
 		$sql   = "SELECT {$fieldSelection} {$sqlFilterStr} FROM {$table} {$sql} {$this->sqlSelectSnippet} -- keep-cache";
 		$this->sqlSelectSnippet = '';
 		$rows  = $this->adapter->get( $sql, $bindings );
-
-		if ( $this->flagUseCache && !empty( $key ) ) {
+		if ( $this->flagUseCache && $key ) {
 			$this->putResultInCache( $type, $key, $rows );
 		}
 
@@ -1235,20 +914,9 @@ abstract class AQueryWriter
 	 */
 	public function queryRecordWithCursor( $type, $addSql = NULL, $bindings = array() )
 	{
-		$table = $this->esc( $type );
-
-		$sqlFilterStr = '';
-		if ( count( self::$sqlFilters ) ) {
-			$sqlFilterStr = $this->getSQLFilterSnippet( $type );
-		}
-
 		$sql = $this->glueSQLCondition( $addSql, NULL );
-
-		$sql = $this->parseJoin( $type, $sql );
-		$fieldSelection = self::$flagNarrowFieldMode ? "{$table}.*" : '*';
-
-		$sql = "SELECT {$fieldSelection} {$sqlFilterStr} FROM {$table} {$sql} -- keep-cache";
-
+		$table = $this->esc( $type );
+		$sql   = "SELECT {$table}.* FROM {$table} {$sql}";
 		return $this->adapter->getCursor( $sql, $bindings );
 	}
 
@@ -1257,16 +925,16 @@ abstract class AQueryWriter
 	 */
 	public function queryRecordRelated( $sourceType, $destType, $linkIDs, $addSql = '', $bindings = array() )
 	{
+		$addSql = $this->glueSQLCondition( $addSql, QueryWriter::C_GLUE_WHERE );
+
 		list( $sourceTable, $destTable, $linkTable, $sourceCol, $destCol ) = $this->getRelationalTablesAndColumns( $sourceType, $destType );
 
-		if ( $this->flagUseCache ) {
-			$key = $this->getCacheKey( array( $sourceType, implode( ',', $linkIDs ), trim($addSql), $bindings, 'selectrelated' ) );
-			if ( $cached = $this->getCached( $destType, $key ) ) {
-				return $cached;
-			}
+		$key = $this->getCacheKey( array( $sourceType, $destType, implode( ',', $linkIDs ), $addSql, $bindings ) );
+
+		if ( $this->flagUseCache && $cached = $this->getCached( $destType, $key ) ) {
+			return $cached;
 		}
 
-		$addSql = $this->glueSQLCondition( $addSql, QueryWriter::C_GLUE_WHERE );
 		$inClause = $this->getParametersForInClause( $linkIDs, $bindings );
 
 		$sqlFilterStr = '';
@@ -1306,9 +974,7 @@ abstract class AQueryWriter
 
 		$rows = $this->adapter->get( $sql, $bindings );
 
-		if ( $this->flagUseCache ) {
-			$this->putResultInCache( $destType, $key, $rows );
-		}
+		$this->putResultInCache( $destType, $key, $rows );
 
 		return $rows;
 	}
@@ -1320,17 +986,15 @@ abstract class AQueryWriter
 	{
 		list( $sourceTable, $destTable, $linkTable, $sourceCol, $destCol ) = $this->getRelationalTablesAndColumns( $sourceType, $destType );
 
-		if ( $this->flagUseCache ) {
-			$key = $this->getCacheKey( array( $sourceType, $destType, $sourceID, $destID, 'selectlink' ) );
-			if ( $cached = $this->getCached( $linkTable, $key ) ) {
-				return $cached;
-			}
+		$key = $this->getCacheKey( array( $sourceType, $destType, $sourceID, $destID ) );
+
+		if ( $this->flagUseCache && $cached = $this->getCached( $linkTable, $key ) ) {
+			return $cached;
 		}
 
 		$sqlFilterStr = '';
 		if ( count( self::$sqlFilters ) ) {
-			$linkType = $this->getAssocTable( array( $sourceType, $destType ) );
-			$sqlFilterStr = $this->getSQLFilterSnippet( "{$linkType}" );
+			$sqlFilterStr = $this->getSQLFilterSnippet( $destType );
 		}
 
 		if ( $sourceTable === $destTable ) {
@@ -1344,38 +1008,16 @@ abstract class AQueryWriter
 			$row = $this->adapter->getRow( $sql, array( $sourceID, $destID ) );
 		}
 
-		if ( $this->flagUseCache ) {
-			$this->putResultInCache( $linkTable, $key, $row );
-		}
+		$this->putResultInCache( $linkTable, $key, $row );
 
 		return $row;
 	}
 
 	/**
-	 * Returns or counts all rows of specified type that have been tagged with one of the
-	 * strings in the specified tag list array.
-	 *
-	 * Note that the additional SQL snippet can only be used for pagination,
-	 * the SQL snippet will be appended to the end of the query.
-	 *
-	 * @param string  $type     the bean type you want to query
-	 * @param array   $tagList  an array of strings, each string containing a tag title
-	 * @param boolean $all      if TRUE only return records that have been associated with ALL the tags in the list
-	 * @param string  $addSql   addition SQL snippet, for pagination
-	 * @param array   $bindings parameter bindings for additional SQL snippet
-	 * @param string  $wrap     SQL wrapper string (use %s for subquery)
-	 *
-	 * @return array
+	 * @see QueryWriter::queryTagged
 	 */
-	private function queryTaggedGeneric( $type, $tagList, $all = FALSE, $addSql = '', $bindings = array(), $wrap = '%s' )
+	public function queryTagged( $type, $tagList, $all = FALSE, $addSql = '', $bindings = array() )
 	{
-		if ( $this->flagUseCache ) {
-			$key = $this->getCacheKey( array( implode( ',', $tagList ), $all, trim($addSql), $bindings, 'selectTagged' ) );
-			if ( $cached = $this->getCached( $type, $key ) ) {
-				return $cached;
-			}
-		}
-
 		$assocType = $this->getAssocTable( array( $type, 'tag' ) );
 		$assocTable = $this->esc( $assocType );
 		$assocField = $type . '_id';
@@ -1384,42 +1026,18 @@ abstract class AQueryWriter
 		$score = ( $all ) ? count( $tagList ) : 1;
 
 		$sql = "
-			SELECT {$table}.* FROM {$table}
+			SELECT {$table}.*, count({$table}.id) FROM {$table}
 			INNER JOIN {$assocTable} ON {$assocField} = {$table}.id
 			INNER JOIN tag ON {$assocTable}.tag_id = tag.id
 			WHERE tag.title IN ({$slots})
 			GROUP BY {$table}.id
 			HAVING count({$table}.id) >= ?
 			{$addSql}
-			-- keep-cache
 		";
-		$sql = sprintf($wrap,$sql);
 
 		$bindings = array_merge( $tagList, array( $score ), $bindings );
 		$rows = $this->adapter->get( $sql, $bindings );
-
-		if ( $this->flagUseCache ) {
-			$this->putResultInCache( $type, $key, $rows );
-		}
-
 		return $rows;
-	}
-
-	/**
-	 * @see QueryWriter::queryTagged
-	 */
-	public function queryTagged( $type, $tagList, $all = FALSE, $addSql = '', $bindings = array() )
-	{
-		return $this->queryTaggedGeneric( $type, $tagList, $all, $addSql, $bindings );
-	}
-
-	/**
-	 * @see QueryWriter::queryCountTagged
-	 */
-	public function queryCountTagged( $type, $tagList, $all = FALSE, $addSql = '', $bindings = array() )
-	{
-		$rows = $this->queryTaggedGeneric( $type, $tagList, $all, $addSql, $bindings, 'SELECT COUNT(*) AS counted FROM (%s) AS counting' );
-		return intval($rows[0]['counted']);
 	}
 
 	/**
@@ -1427,31 +1045,16 @@ abstract class AQueryWriter
 	 */
 	public function queryRecordCount( $type, $conditions = array(), $addSql = NULL, $bindings = array() )
 	{
-		if ( $this->flagUseCache ) {
-			$key = $this->getCacheKey( array( $conditions, trim($addSql), $bindings, 'count' ) );
-			if ( $cached = $this->getCached( $type, $key ) ) {
-				return $cached;
-			}
-		}
+		$addSql = $this->glueSQLCondition( $addSql );
 
 		$table  = $this->esc( $type );
 
-		if ( is_array ( $conditions ) && !empty ( $conditions ) ) {
-			$sql = $this->makeSQLFromConditions( $conditions, $bindings, $addSql );
-		} else {
-			$sql = $this->glueSQLCondition( $addSql );
-		}
+		$this->updateCache(); //check if cache chain has been broken
 
-		$sql = $this->parseJoin( $type, $sql );
-
+		$sql    = $this->makeSQLFromConditions( $conditions, $bindings, $addSql );
 		$sql    = "SELECT COUNT(*) FROM {$table} {$sql} -- keep-cache";
-		$count  = (int) $this->adapter->getCell( $sql, $bindings );
 
-		if ( $this->flagUseCache ) {
-			$this->putResultInCache( $type, $key, $count );
-		}
-
-		return $count;
+		return (int) $this->adapter->getCell( $sql, $bindings );
 	}
 
 	/**
@@ -1461,13 +1064,7 @@ abstract class AQueryWriter
 	{
 		list( $sourceTable, $destTable, $linkTable, $sourceCol, $destCol ) = $this->getRelationalTablesAndColumns( $sourceType, $destType );
 
-		if ( $this->flagUseCache ) {
-			$cacheType = "#{$sourceType}/{$destType}";
-			$key = $this->getCacheKey( array( $sourceType, $destType, $linkID, trim($addSql), $bindings, 'countrelated' ) );
-			if ( $cached = $this->getCached( $cacheType, $key ) ) {
-				return $cached;
-			}
-		}
+		$this->updateCache(); //check if cache chain has been broken
 
 		if ( $sourceType === $destType ) {
 			$sql = "
@@ -1490,50 +1087,7 @@ abstract class AQueryWriter
 			$bindings = array_merge( array( $linkID ), $bindings );
 		}
 
-		$count = (int) $this->adapter->getCell( $sql, $bindings );
-
-		if ( $this->flagUseCache ) {
-			$this->putResultInCache( $cacheType, $key, $count );
-		}
-
-		return $count;
-	}
-
-	/**
-	 * @see QueryWriter::queryRecursiveCommonTableExpression
-	 */
-	public function queryRecursiveCommonTableExpression( $type, $id, $up = TRUE, $addSql = NULL, $bindings = array(), $selectForm = FALSE )
-	{
-		if ($selectForm === QueryWriter::C_CTE_SELECT_COUNT) {
-			$selectForm = "count(redbeantree.*)";
-		} elseif ( $selectForm === QueryWriter::C_CTE_SELECT_NORMAL ) {
-			$selectForm = "redbeantree.*";
-		}
-		$alias     = $up ? 'parent' : 'child';
-		$direction = $up ? " {$alias}.{$type}_id = {$type}.id " : " {$alias}.id = {$type}.{$type}_id ";
-		/* allow numeric and named param bindings, if '0' exists then numeric */
-		if ( array_key_exists( 0,$bindings ) ) {
-			array_unshift( $bindings, $id );
-			$idSlot = '?';
-		} else {
-			$idSlot = ':slot0';
-			$bindings[$idSlot] = $id;
-		}
-		$sql = $this->glueSQLCondition( $addSql, QueryWriter::C_GLUE_WHERE );
-		$sql = $this->parseJoin( 'redbeantree', $sql, $type );
-		$rows = $this->adapter->get("
-			WITH RECURSIVE redbeantree AS
-			(
-				SELECT *
-				FROM {$type} WHERE {$type}.id = {$idSlot}
-				UNION ALL
-				SELECT {$type}.* FROM {$type}
-				INNER JOIN redbeantree {$alias} ON {$direction}
-			)
-			SELECT {$selectForm} FROM redbeantree {$sql};",
-			$bindings
-		);
-		return $rows;
+		return (int) $this->adapter->getCell( $sql, $bindings );
 	}
 
 	/**
@@ -1541,17 +1095,14 @@ abstract class AQueryWriter
 	 */
 	public function deleteRecord( $type, $conditions = array(), $addSql = NULL, $bindings = array() )
 	{
+		$addSql = $this->glueSQLCondition( $addSql );
+
 		$table  = $this->esc( $type );
 
-		if ( is_array ( $conditions ) && !empty ( $conditions ) ) {
-			$sql = $this->makeSQLFromConditions( $conditions, $bindings, $addSql );
-		} else {
-			$sql = $this->glueSQLCondition( $addSql );
-		}
-
+		$sql    = $this->makeSQLFromConditions( $conditions, $bindings, $addSql );
 		$sql    = "DELETE FROM {$table} {$sql}";
 
-		return $this->adapter->exec( $sql, $bindings );
+		$this->adapter->exec( $sql, $bindings );
 	}
 
 	/**
@@ -1588,7 +1139,7 @@ abstract class AQueryWriter
 
 		$newType = $this->typeno_sqltype[$dataType];
 
-		$this->adapter->exec( sprintf( $this->getDDLTemplate( 'widenColumn', $type, $column ), $type, $column, $column, $newType ) );
+		$this->adapter->exec( "ALTER TABLE $table CHANGE $column $column $newType " );
 
 		return TRUE;
 	}
@@ -1640,14 +1191,14 @@ abstract class AQueryWriter
 	 * Clears the internal query cache array and returns its overall
 	 * size.
 	 *
-	 * @return mixed
+	 * @return integer
 	 */
-	public function flushCache( $newMaxCacheSizePerType = NULL, $countCache = TRUE )
+	public function flushCache( $newMaxCacheSizePerType = NULL )
 	{
 		if ( !is_null( $newMaxCacheSizePerType ) && $newMaxCacheSizePerType > 0 ) {
 			$this->maxCacheSizePerType = $newMaxCacheSizePerType;
 		}
-		$count = $countCache ? count( $this->cache, COUNT_RECURSIVE ) : NULL;
+		$count = count( $this->cache, COUNT_RECURSIVE );
 		$this->cache = array();
 		return $count;
 	}
@@ -1676,6 +1227,23 @@ abstract class AQueryWriter
 	public function safeTable( $table, $noQuotes = FALSE )
 	{
 		return $this->esc( $table, $noQuotes );
+	}
+
+	/**
+	 * @see QueryWriter::inferFetchType
+	 */
+	public function inferFetchType( $type, $property )
+	{
+		$type = $this->esc( $type, TRUE );
+		$field = $this->esc( $property, TRUE ) . '_id';
+		$keys = $this->getKeyMapForType( $type );
+
+		foreach( $keys as $key ) {
+			if (
+				$key['from'] === $field
+			) return $key['table'];
+		}
+		return NULL;
 	}
 
 	/**

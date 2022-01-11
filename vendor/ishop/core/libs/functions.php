@@ -1,18 +1,18 @@
 <?php
 
-
-function debug($arr) //Создаем функцию со значением $arr.
-{
-   echo "<pre>" . print_r($arr, true) . "</pre>"; //Симпатично распичатываем масивы. 
+function debug($arr){
+    echo '<pre>' . print_r($arr, true) . '</pre>';
+}
+function redirect($http = false){
+    if($http){
+        $redirect = $http;
+    }else{
+        $redirect = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : PATH;
+    }
+    header("Location: $redirect");
+    exit;
 }
 
-function redirect($http = false) //Создаем функцию со значением $http = false.
-{
-   if($http) { //Условие: если есть адресс,
-      $redirect = $http; //тогда записуем его в переменную.
-   } else { //В противном случаее,
-      $redirect = isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : PATH; //в переменную записываем условие: если существует путь который ввел пользователь, тогда переходим по нему, в противном случаее переходим на главную страницу. 
-   }
-   header("Location: $redirect"); //переходим по результату условия.
-   exit; //заканчуем выполнение кода.
+function h($str){
+    return htmlspecialchars($str, ENT_QUOTES);
 }

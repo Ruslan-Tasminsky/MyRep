@@ -42,101 +42,6 @@ class Misc extends Blackhole
 	}
 
 	/**
-	 * Test whether we get the correct exception if we try to
-	 * add a database we don't have a compatible QueryWriter for.
-	 *
-	 * @return void
-	 */
-	public function testUnsupportedDatabaseWriter()
-	{
-		$exception = NULL;
-		try {
-			R::addDatabase( 'x', 'blackhole:host=localhost;dbname=db', 'username', 'password' );
-		} catch( \Exception $e ) {
-			$exception = $e;
-		}
-		asrt( ( $exception instanceof RedException ), TRUE );
-		asrt( $exception->getMessage(), 'Unsupported database (blackhole).' );
-		$rpdo = new \TestRPO( new \MockPDO );
-		asrt( @$rpdo->testCap( 'utf8mb4' ), FALSE );
-	}
-
-	/**
-	 * Test pstr and pint functions
-	 *
-	 * @return void
-	 */
-	public function testPintPstr()
-	{
-		$x = pstr('test');
-		asrt(is_array($x), TRUE);
-		asrt($x[0],'test');
-		asrt($x[1],\PDO::PARAM_STR);
-		$x = pint(123);
-		asrt(is_array($x), TRUE);
-		asrt($x[0],123);
-		asrt($x[1],\PDO::PARAM_INT);
-	}
-
-	/**
-	 * Misc tests.
-	 * 'Tests' almost impossible lines to test.
-	 * Not sure if very useful.
-	 *
-	 * @return void
-	 */
-	public function testMisc()
-	{
-		$null = R::getDatabaseAdapter()->getDatabase()->stringifyFetches( TRUE );
-		asrt( NULL, $null );
-		R::getDatabaseAdapter()->getDatabase()->stringifyFetches( FALSE );
-	}
-
-	/**
-	 * Test whether we can toggle enforcement of the RedBeanPHP
-	 * naming policy.
-	 *
-	 * @return void
-	 */
-	public function testEnforceNamingPolicy()
-	{
-		\RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy( FALSE );
-		R::dispense('a_b');
-		pass();
-		\RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy( TRUE );
-		try {
-			R::dispense('a_b');
-			fail();
-		} catch( \Exception $e ) {
-			pass();
-		}
-	}
-
-	/**
-	 * Test R::csv()
-	 *
-	 * @return void
-	 */
-	public function testCSV()
-	{
-		\RedBeanPHP\Util\QuickExport::operation( 'test', TRUE, TRUE );
-		R::nuke();
-		$city = R::dispense('city');
-		$city->name = 'city1';
-		$city->region = 'region1';
-		$city->population = '200k';
-		R::store($city);
-		$qe = new \RedBeanPHP\Util\QuickExport( R::getToolBox() );
-		$out = $qe->csv( 'SELECT `name`, population FROM city WHERE region = :region ',
-			array( ':region' => 'region1' ),
-			array( 'city', 'population' ),
-			'/tmp/cities.csv'
-			);
-		$out = preg_replace( '/\W/', '', $out );
-		asrt( 'PragmapublicExpires0CacheControlmustrevalidatepostcheck0precheck0CacheControlprivateContentTypetextcsvContentDispositionattachmentfilenamecitiescsvContentTransferEncodingbinarycitypopulationcity1200k', $out );
-	}
-
-	/**
 	 * Test whether sqlStateIn can detect lock timeouts.
 	 *
 	 * @return void
@@ -305,7 +210,7 @@ class Misc extends Blackhole
 	{
 		testpack( 'Test debug mode with custom logger' );
 		$pdoDriver = new RPDO( R::getDatabaseAdapter()->getDatabase()->getPDO() );
-		$customLogger = new \CustomLogger;
+		$customLogger = new CustomLogger;
 		$pdoDriver->setDebugMode( TRUE, $customLogger );
 		$pdoDriver->Execute( 'SELECT 123' );
 		asrt( count( $customLogger->getLogMessage() ), 1 );
@@ -363,7 +268,7 @@ class Misc extends Blackhole
 			R::transaction( function () use ( $bean ) {
 				R::store( $bean );
 				R::transaction( function () {
-					throw new \Exception();
+					throw new\Exception();
 				} );
 			} );
 		} catch (\Exception $e ) {
@@ -376,7 +281,7 @@ class Misc extends Blackhole
 			R::transaction( function () use ( $bean ) {
 				R::transaction( function () use ( $bean ) {
 					R::store( $bean );
-					throw new \Exception();
+					throw new\Exception();
 				} );
 			} );
 		} catch (\Exception $e ) {
@@ -614,67 +519,25 @@ class Misc extends Blackhole
 		asrt( AQueryWriter::camelsSnake('objectACL2Factory'), 'object_acl2_factory' );
 		asrt( AQueryWriter::camelsSnake('bookItems4Page'), 'book_items4_page' );
 		asrt( AQueryWriter::camelsSnake('book☀Items4Page'), 'book☀_items4_page' );
-		asrt( R::uncamelfy('book☀Items4Page'), 'book☀_items4_page' );
-		$array = R::uncamelfy( array( 'bookPage' => 1, 'camelCaseString' => 2, 'snakeCaseString' => array( 'dolphinCaseString' => 3 ) ) );
-		asrt( isset( $array['book_page'] ), TRUE );
-		asrt( isset( $array['camel_case_string'] ), TRUE );
-		asrt( isset( $array['snake_case_string']['dolphin_case_string'] ), TRUE );
-		$array = R::uncamelfy( array( 'oneTwo' => array( 'twoThree' => array( 'threeFour' => 1 ) ) ) );
-		asrt( isset( $array['one_two']['two_three']['three_four'] ), TRUE );
-	}
-
-	/**
-	 * Test camelCase to snake_case conversions.
-	 *
-	 * @return void
-	 */
-	public function testSnake2Camel()
-	{
-		asrt( AQueryWriter::snakeCamel('book_page'), 'bookPage' );
-		asrt( AQueryWriter::snakeCamel('ftp'), 'ftp' );
-		asrt( AQueryWriter::snakeCamel('acl_rules'), 'aclRules' );
-		asrt( AQueryWriter::snakeCamel('ssh_connection_proxy'), 'sshConnectionProxy' );
-		asrt( AQueryWriter::snakeCamel('proxy_server_facade'), 'proxyServerFacade' );
-		asrt( AQueryWriter::snakeCamel('proxy_ssh_client'), 'proxySshClient' );
-		asrt( AQueryWriter::snakeCamel('object_acl2_factory'), 'objectAcl2Factory' );
-		asrt( AQueryWriter::snakeCamel('book_items4_page'), 'bookItems4Page' );
-		asrt( AQueryWriter::snakeCamel('book☀_items4_page'), 'book☀Items4Page' );
-		asrt( R::camelfy('book☀_items4_page'), 'book☀Items4Page' );
-		$array = R::camelfy( array( 'book_page' => 1, 'camel_case_string' => 2, 'snake_case_string' => array( 'dolphin_case_string' => 3 )  ) );
-		asrt( isset( $array['bookPage'] ), TRUE );
-		asrt( isset( $array['camelCaseString'] ), TRUE );
-		asrt( isset( $array['snakeCaseString']['dolphinCaseString'] ), TRUE );
-		$array = R::camelfy( array( 'one_two' => array( 'two_three' => array( 'three_four' => 1 ) ) ) );
-		asrt( isset( $array['oneTwo']['twoThree']['threeFour'] ), TRUE );
-		//Dolphin mode
-		asrt( AQueryWriter::snakeCamel('book_id', true), 'bookID' );
-		$array = R::camelfy( array( 'bookid' => array( 'page_id' => 3 )  ), true );
-		asrt( isset( $array['bookid']['pageID'] ), TRUE );
-		asrt( AQueryWriter::snakeCamel('book_id', true), 'bookID' );
-		$array = R::camelfy( array( 'book_id' => array( 'page_id' => 3 )  ), true );
-		asrt( isset( $array['bookID']['pageID'] ), TRUE );
-		$array = R::camelfy( array( 'book_ids' => array( 'page_id' => 3 )  ), true );
-		asrt( isset( $array['bookIds']['pageID'] ), TRUE );
-	}
-
-	/**
-	 * Test that init SQL is being executed upon setting PDO.
-	 *
-	 * @return void
-	 */
-	public function testRunInitCodeOnSetPDO()
-	{
-		$pdo = R::getToolBox()->getDatabaseAdapter()->getDatabase()->getPDO();
-		$rpdo = new \RedBeanPHP\Driver\RPDO( $pdo );
-		$rpdo->setEnableLogging(true);
-		$logger = new \RedBeanPHP\Logger\RDefault\Debug;
-		$logger->setMode( \RedBeanPHP\Logger\RDefault::C_LOGGER_ARRAY );
-		$rpdo->setLogger( $logger );
-		$rpdo->setInitQuery('SELECT 123');
-		$rpdo->setPDO( $pdo );
-		$found = $logger->grep('SELECT 123');
-		asrt(count($found), 1);
-		asrt($found[0], 'SELECT 123');
 	}
 }
 
+/**
+ * Custom Logger class.
+ * For testing purposes.
+ */
+class CustomLogger extends RDefault
+{
+
+	private $log;
+
+	public function getLogMessage()
+	{
+		return $this->log;
+	}
+
+	public function log()
+	{
+		$this->log = func_get_args();
+	}
+}

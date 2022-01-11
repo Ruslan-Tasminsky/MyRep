@@ -2,6 +2,8 @@
 
 namespace app\controllers;
 
+use app\models\CartModel;
+
 class CurrencyController extends AppController
 {
     public function changeAction() //Создаем публичный метод
@@ -11,6 +13,7 @@ class CurrencyController extends AppController
             $curr = \R::findOne("currency", "code = ?", [$currency]); //тогда в переменную вкладуем запрос на получение требуемой валюты.
             if(!empty($curr)) {//Условие: если непуст запрос валюты,
                 setcookie("currency", $currency, time() + 3600*24*7, "/"); //тогда добавляем её в куки под названием ..., со значением ..., на время ..., для домена ...
+                CartModel::recalc($curr);
             }
         }
         redirect(); //Используем метод переадрессации на запращуему страницу.

@@ -93,13 +93,11 @@ class Fluid extends Repository
 	 *
 	 * @return void
 	 */
-	private function modifySchema( OODBBean $bean, $property, $value, &$columns = NULL )
+	private function modifySchema( OODBBean $bean, $property, $value )
 	{
 		$doFKStuff = FALSE;
 		$table   = $bean->getMeta( 'type' );
-		if ($columns === NULL) {
-			$columns = $this->writer->getColumns( $table );
-		}
+		$columns = $this->writer->getColumns( $table );
 		$columnNoQ = $this->writer->esc( $property, TRUE );
 		if ( !$this->oodb->isChilled( $bean->getMeta( 'type' ) ) ) {
 			if ( $bean->getMeta( "cast.$property", -1 ) !== -1 ) { //check for explicitly specified types
@@ -213,11 +211,10 @@ class Fluid extends Repository
 				$bean->setMeta( 'changelist', array() );
 			}
 
-			$columnCache = NULL;
 			foreach ( $bean as $property => $value ) {
 				if ( $partial && !in_array( $property, $mask ) ) continue;
 				if ( $property !== 'id' ) {
-					$this->modifySchema( $bean, $property, $value, $columnCache );
+					$this->modifySchema( $bean, $property, $value );
 				}
 				if ( $property !== 'id' ) {
 					$updateValues[] = array( 'property' => $property, 'value' => $value );
@@ -231,21 +228,9 @@ class Fluid extends Repository
 	}
 
 	/**
-	 * Exception handler.
-	 * Fluid and Frozen mode have different ways of handling
-	 * exceptions. Fluid mode (using the fluid repository) ignores
-	 * exceptions caused by the following:
+	 * Handles exceptions. Suppresses exceptions caused by missing structures.
 	 *
-	 * - missing tables
-	 * - missing column
-	 *
-	 * In these situations, the repository will behave as if
-	 * no beans could be found. This is because in fluid mode
-	 * it might happen to query a table or column that has not been
-	 * created yet. In frozen mode, this is not supposed to happen
-	 * and the corresponding exceptions will be thrown.
-	 *
-	 * @param \Exception $exception exception
+	 * @param Exception $exception exception
 	 *
 	 * @return void
 	 */
@@ -259,6 +244,36 @@ class Fluid extends Repository
 		) {
 			throw $exception;
 		}
+	}
+
+	/**
+	 * Dispenses a new bean (a OODBBean Bean Object)
+	 * of the specified type. Always
+	 * use this function to get an empty bean object. Never
+	 * instantiate a OODBBean yourself because it needs
+	 * to be configured before you can use it with RedBean. This
+	 * function applies the appropriate initialization /
+	 * configuration for you.
+	 *
+	 * @param string  $type              type of bean you want to dispense
+	 * @param string  $number            number of beans you would like to get
+	 * @param boolean $alwaysReturnArray if TRUE always returns the result as an array
+	 *
+	 * @return OODBBean
+	 */
+	public function dispense( $type, $number = 1, $alwaysReturnArray = FALSE )
+	{
+		$OODBBEAN = defined( 'REDBEAN_OODBBEAN_CLASS' ) ? REDBEAN_OODBBEAN_CLASS : '\RedBeanPHP\OODBBean';
+		$beans = array();
+		for ( $i = 0; $i < $number; $i++ ) {
+			$bean = new $OODBBEAN;
+			$bean->initializeForDispense( $type, $this->oodb->getBeanHelper() );
+			$this->check( $bean );
+			$this->oodb->signal( 'dispense', $bean );
+			$beans[] = $bean;
+		}
+
+		return ( count( $beans ) === 1 && !$alwaysReturnArray ) ? array_pop( $beans ) : $beans;
 	}
 
 	/**

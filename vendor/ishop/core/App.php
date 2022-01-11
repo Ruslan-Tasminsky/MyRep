@@ -1,28 +1,27 @@
 <?php
 
-namespace ishop; //Прописуем пространство имен.
+namespace ishop;
 
-class App //Создаем класс.
-{
-   public static $app; //Создаем публичное статичное свойство.
+class App{
 
-   public function __construct() //Создаем публичный метод с конструктором.
-   {
-      $query = trim($_SERVER['QUERY_STRING'], "/"); //Свойство которое регестрирует все символы в адрессной строке (кроме слэша), которые находятся после url главной страницы. 
-      session_start(); //Стартуем сессию.
-      self::$app = Registry::instance(); //В контейнер ложим объект нашего регестра.
-      $this->getParams(); //Обращаемся к методу.
-      new ErrorHendler(); //Создаем экземпляр класса с выводом ошибок.
-      Router::dispatch($query); //Обращаемся к методу dispatch со свойством $query.
-   }
+    public static $app;
 
-   protected function getParams() //Создаем защищенный статичный метод.
-   {
-      $params = require_once CONF . "/params.php"; //В свойство $params подключаем файл params.php.
-      if (!empty($params)) { //Условие: если свойство $params непусто,
-         foreach ($params as $k => $v) { //тогда пройдемся в цикле где нам нужно получить отдельно ключ и отдельно значение. 
-            self::$app->setProperty($k, $v); //Обращаемся к методу и кладем в них ключ и значение (заполняем в цикле контейнер).
-         }
-      }
-   }
+    public function __construct(){
+        $query = trim($_SERVER['QUERY_STRING'], '/');
+        session_start();
+        self::$app = Registry::instance();
+        $this->getParams();
+        new ErrorHandler();
+        Router::dispatch($query);
+    }
+
+    protected function getParams(){
+        $params = require_once CONF . '/params.php';
+        if(!empty($params)){
+            foreach($params as $k => $v){
+                self::$app->setProperty($k, $v);
+            }
+        }
+    }
+
 }

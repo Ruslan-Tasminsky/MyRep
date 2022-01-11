@@ -43,21 +43,6 @@ class SQLiteT extends AQueryWriter implements QueryWriter
 	protected $quoteCharacter = '`';
 
 	/**
-	 * @var array
-	 */
-	protected $DDLTemplates = array(
-		'addColumn' => array(
-			'*' => 'ALTER TABLE `%s` ADD `%s` %s'
-		),
-		'createTable' => array(
-			'*' => 'CREATE TABLE %s ( id INTEGER PRIMARY KEY AUTOINCREMENT )'
-		),
-		'widenColumn' => array(
-			'*' => ',`%s` %s '
-		)
-	);
-
-	/**
 	 * Gets all information about a table (from a type).
 	 *
 	 * Format:
@@ -119,7 +104,7 @@ class SQLiteT extends AQueryWriter implements QueryWriter
 		$newTableDefStr = '';
 		foreach ( $tableMap['columns'] as $column => $type ) {
 			if ( $column != 'id' ) {
-				$newTableDefStr .= sprintf( $this->getDDLTemplate( 'widenColumn', $table, $column ), $column, $type );
+				$newTableDefStr .= ",`$column` $type";
 			}
 		}
 
@@ -231,35 +216,6 @@ class SQLiteT extends AQueryWriter implements QueryWriter
 
 	/**
 	 * Constructor
-	 * Most of the time, you do not need to use this constructor,
-	 * since the facade takes care of constructing and wiring the
-	 * RedBeanPHP core objects. However if you would like to
-	 * assemble an OODB instance yourself, this is how it works:
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $database = new RPDO( $dsn, $user, $pass );
-	 * $adapter = new DBAdapter( $database );
-	 * $writer = new PostgresWriter( $adapter );
-	 * $oodb = new OODB( $writer, FALSE );
-	 * $bean = $oodb->dispense( 'bean' );
-	 * $bean->name = 'coffeeBean';
-	 * $id = $oodb->store( $bean );
-	 * $bean = $oodb->load( 'bean', $id );
-	 * </code>
-	 *
-	 * The example above creates the 3 RedBeanPHP core objects:
-	 * the Adapter, the Query Writer and the OODB instance and
-	 * wires them together. The example also demonstrates some of
-	 * the methods that can be used with OODB, as you see, they
-	 * closely resemble their facade counterparts.
-	 *
-	 * The wiring process: create an RPDO instance using your database
-	 * connection parameters. Create a database adapter from the RPDO
-	 * object and pass that to the constructor of the writer. Next,
-	 * create an OODB instance from the writer. Now you have an OODB
-	 * object.
 	 *
 	 * @param Adapter $adapter Database Adapter
 	 */
@@ -327,7 +283,7 @@ class SQLiteT extends AQueryWriter implements QueryWriter
 		$table  = $this->check( $table );
 		$type   = $this->typeno_sqltype[$type];
 
-		$this->adapter->exec( sprintf( $this->getDDLTemplate( 'addColumn', $table, $column ), $table, $column, $type ) );
+		$this->adapter->exec( "ALTER TABLE `$table` ADD `$column` $type " );
 	}
 
 	/**
@@ -364,11 +320,11 @@ class SQLiteT extends AQueryWriter implements QueryWriter
 	/**
 	 * @see QueryWriter::createTable
 	 */
-	public function createTable( $type )
+	public function createTable( $table )
 	{
-		$table = $this->esc( $type );
+		$table = $this->esc( $table );
 
-		$sql = sprintf( $this->getDDLTemplate( 'createTable', $type ), $table );
+		$sql   = "CREATE TABLE $table ( id INTEGER PRIMARY KEY AUTOINCREMENT ) ";
 
 		$this->adapter->exec( $sql );
 	}
@@ -425,20 +381,6 @@ class SQLiteT extends AQueryWriter implements QueryWriter
 	}
 
 	/**
-	 * Sets an SQL snippet to be used for the next queryRecord() operation.
-	 * SQLite has no SELECT-FOR-UPDATE and filters this.
-	 *
-	 * @param string $sql SQL snippet to use in SELECT statement.
-	 *
-	 * return self
-	 */
-	public function setSQLSelectSnippet( $sqlSelectSnippet = '' ) {
-		if ( $sqlSelectSnippet === AQueryWriter::C_SELECT_SNIPPET_FOR_UPDATE) $sqlSelectSnippet = '';
-		$this->sqlSelectSnippet = $sqlSelectSnippet;
-		return $this;
-	}
-
-	/**
 	 * @see QueryWriter::addIndex
 	 */
 	public function addIndex( $type, $name, $column )
@@ -483,12 +425,18 @@ class SQLiteT extends AQueryWriter implements QueryWriter
 	 */
 	public function wipeAll()
 	{
-		if (AQueryWriter::$noNuke) throw new \Exception('The nuke() command has been disabled using noNuke() or R::feature(novice/...).');
 		$this->adapter->exec( 'PRAGMA foreign_keys = 0 ' );
 
 		foreach ( $this->getTables() as $t ) {
-			try { $this->adapter->exec( "DROP TABLE IF EXISTS `$t`" ); } catch ( SQLException $e ) { ; }
-			try { $this->adapter->exec( "DROP TABLE IF EXISTS `$t`" ); } catch ( SQLException $e ) { ; }
+			try {
+				$this->adapter->exec( "DROP TABLE IF EXISTS `$t`" );
+			} catch ( SQLException $e ) {
+			}
+
+			try {
+				$this->adapter->exec( "DROP TABLE IF EXISTS `$t`" );
+			} catch ( SQLException $e ) {
+			}
 		}
 
 		$this->adapter->exec( 'PRAGMA foreign_keys = 1 ' );

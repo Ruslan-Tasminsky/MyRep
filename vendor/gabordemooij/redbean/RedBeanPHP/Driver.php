@@ -116,26 +116,12 @@ interface Driver
 	/**
 	 * Toggles debug mode. In debug mode the driver will print all
 	 * SQL to the screen together with some information about the
-	 * results.
+	 * results. All SQL code that passes through the driver will be
+	 * passes on to the screen for inspection.
+	 * This method has no return value.
 	 *
-	 * This method is for more fine-grained control. Normally
-	 * you should use the facade to start the query debugger for
-	 * you. The facade will manage the object wirings necessary
-	 * to use the debugging functionality.
-	 *
-	 * Usage (through facade):
-	 *
-	 * <code>
-	 * R::debug( TRUE );
-	 * ...rest of program...
-	 * R::debug( FALSE );
-	 * </code>
-	 *
-	 * The example above illustrates how to use the RedBeanPHP
-	 * query debugger through the facade.
-	 *
-	 * @param boolean $trueFalse turn on/off
-	 * @param Logger  $logger    logger instance
+	 * @param boolean $tf TRUE = debug mode ON
+	 * @param Logger $customLogger
 	 *
 	 * @return void
 	 */
@@ -175,20 +161,4 @@ interface Driver
 	 * @return integer
 	 */
 	public function getQueryCount();
-
-	/**
-	 * Sets initialization code for connection.
-	 *
-	 * @param callable $code code
-	 *
-	 * @return void
-	 */
-	public function setInitCode( $code );
-
-	/**
-	 * Returns the version string from the database server.
-	 *
-	 * @return string
-	 */
-	public function DatabaseServerVersion();
 }

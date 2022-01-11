@@ -1,9 +1,9 @@
-<?php //$parent = isset($category['childs']); // вкладуем существующего ребенка?>
+<?php //$parent = isset($category['childs']); ?>
 <li>
-    <a href="category/<?=$category['alias'];?>"><?=$category['title']; // выводим ввиде ссылки?></a>
+    <a href="category/<?=$category['alias'];?>"><?=$category['title'];?></a>
     <?php if(isset($category['childs'])): ?>
         <ul>
-            <?= $this->getMenuHtml($category['childs']);//если существует ребенок, вызываем его в список?>
+            <?= $this->getMenuHtml($category['childs']);?>
         </ul>
     <?php endif; ?>
 </li>

@@ -42,21 +42,30 @@ class Frozen extends Base
 		R::store( $book );
 		$book = $book->fresh();
 		R::freeze( TRUE );
+
 		$book->xownPageList = array();
+
 		R::store( $book );
 		$book = $book->fresh();
+
 		asrt( R::count('page'), 0 );
+
 		$book->xownPageList[] = R::dispense( 'page' );
+
 		R::store( $book );
 		$book = $book->fresh();
+
 		asrt( R::count('page'), 1 );
+
 		$book->xownPageList;
 		$book->sharedTagList;
 		R::trash( $book );
+
 		asrt( R::count('book'), 0 );
 		asrt( R::count('page'), 0 );
 		asrt( R::count('tag'), 1 );
 		asrt( R::count('book_tag'), 0 );
+
 		R::freeze( FALSE );
 	}
 
@@ -74,6 +83,7 @@ class Frozen extends Base
 		$book->sharedTagList[] = R::dispense( 'tag' );
 		R::store( $book );
 		R::freeze( TRUE );
+
 		$book = R::dispense( 'book' );
 		$book->xownPageList[] = 'nonsense';
 		try {
@@ -82,6 +92,7 @@ class Frozen extends Base
 		} catch( \Exception $e ) {
 			pass();
 		}
+
 		R::freeze( FALSE );
 	}
 

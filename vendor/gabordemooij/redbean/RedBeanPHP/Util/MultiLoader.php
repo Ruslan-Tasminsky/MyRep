@@ -29,16 +29,7 @@ class MultiLoader
 	/**
 	 * Loads multiple types of beans with the same ID.
 	 * This might look like a strange method, however it can be useful
-	 * for loading a one-to-one relation. In a typical 1-1 relation,
-	 * you have two records sharing the same primary key.
-	 * RedBeanPHP has only limited support for 1-1 relations.
-	 * In general it is recommended to use 1-N for this.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * list( $author, $bio ) = R::loadMulti( 'author, bio', $id );
-	 * </code>
+	 * for loading a one-to-one relation.
 	 *
 	 * @param OODB         $oodb  OODB object
 	 * @param string|array $types the set of types to load at once
@@ -48,11 +39,18 @@ class MultiLoader
 	 */
 	public static function load( OODB $oodb, $types, $id )
 	{
-		if ( is_string( $types ) ) $types = explode( ',', $types );
-		if ( !is_array( $types ) ) return array();
+		if ( is_string( $types ) ) {
+			$types = explode( ',', $types );
+		}
+
+		if ( !is_array( $types ) ) {
+			return array();
+		}
+
 		foreach ( $types as $k => $typeItem ) {
 			$types[$k] = $oodb->load( $typeItem, $id );
 		}
+
 		return $types;
 	}
 }

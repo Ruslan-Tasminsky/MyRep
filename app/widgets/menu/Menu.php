@@ -2,59 +2,57 @@
 
 namespace app\widgets\menu;
 
-use ishop\Cache;
 use ishop\App;
+use ishop\Cache;
+use RedUNIT\Base\Threeway;
 
-class Menu
-{
-    protected $data; //Масив данных.
-    protected $tree; //Масив дерева который мы будем строить из данных.
-    protected $menuHtml; //Готовый код Html меню.
-    protected $tpl; //Шаблон меню.
-    protected $container = "ul"; //Контейнер в виде списка.
-    protected $class = "menu"; //Класс контейнера.
-    protected $table = "category"; //Таблица из которой получаем данные.
-    protected $cache = 3600; //Время на которое кэшируем данные.
-    protected $cacheKey = "ishop_menu"; //Ключ кэша.
-    protected $attrs = []; //Пустой массив дополнительных атрибутов.
-    protected $prepend = "";
+class Menu{
 
-    public function __construct($options = []) //Конструктор получает некие настройки.
-    {
-        $this->tpl = WWW . "/menu/menu.php"; //Вызываем свойство в которое влажуем путь к шаблону меню. 
-        $this->getOptions($options); //Вызываем метод который влажует в соответствующий ключ значение
-        $this->run(); //Вызываем метод который формирует страницу.
+    protected $data;
+    protected $tree;
+    protected $menuHtml;
+    protected $tpl;
+    protected $container = 'ul';
+    protected $class = 'menu';
+    protected $table = 'category';
+    protected $cache = 3600;
+    protected $cacheKey = 'ishop_menu';
+    protected $attrs = [];
+    protected $prepend = '';
+
+    public function __construct($options = []){
+        $this->tpl = __DIR__ . '/menu_tpl/menu.php';
+        $this->getOptions($options);
+        $this->run();
     }
 
-    protected function getOptions($options) //Метод который принимает некие настройки
-    {
-        foreach ($options as $k => $v) { // перебираем масив с настройками на ключ и значение.
-            if (property_exists($this, $k)) { //Условие: если ключ который мы получили является свойством в этом классе,
-                $this->$k = $v; //тогда вызывае ключ (свойство этого класса) влаживаем значение.
+    protected function getOptions($options){
+        foreach($options as $k => $v){
+            if(property_exists($this, $k)){
+                $this->$k = $v;
             }
         }
     }
 
-    protected function run()
-    {
-        $cache = Cache::instance(); //Создаем объект кэша.
-        $this->menuHtml = $cache->get($this->cacheKey); //Вызываем свойство, в которое влажуем кэш по имени которое лежит в свойстве.
-        if (!$this->menuHtml) { //Условие: если мы не получили данные из кэша, 
-            $this->data = App::$app->getProperty("cats"); //тогда вызываем масив и влажуем данные из контейнера с категориями.
-            if (!$this->data) { //Условие: если мы не получили данные,
-                $this->data = $cats = \R::getAssoc("SELECT * FROM {$this->table}"); //тогда в него влажуем данные из таблицы бд которая прописана в свойстве.
+    protected function run(){
+        $cache = Cache::instance();
+        $this->menuHtml = $cache->get($this->cacheKey);
+        if(!$this->menuHtml){
+            $this->data = App::$app->getProperty('cats');
+            if(!$this->data){
+                $this->data = $cats = \R::getAssoc("SELECT * FROM {$this->table}");
             }
             $this->tree = $this->getTree();
             $this->menuHtml = $this->getMenuHtml($this->tree);
-            if ($this->cache) { //Условие: если свойство активно,
-                $cache->set($this->cacheKey, $this->menuHtml, $this->cache); //тогда кэшируем свойство которое является шаблоном меню
+            if($this->cache){
+                $cache->set($this->cacheKey, $this->menuHtml, $this->cache);
             }
         }
-        $this->output(); //Вызываем метод.
+        $this->output();
     }
 
     protected function output(){
-        $attrs = "";
+        $attrs = '';
         if(!empty($this->attrs)){
             foreach($this->attrs as $k => $v){
                 $attrs .= " $k='$v' ";
@@ -66,33 +64,31 @@ class Menu
         echo "</{$this->container}>";
     }
 
-    protected function getTree()
-    {
-        $tree = []; //Создаем пустой масив дерева.
-        $data = $this->data; //В переменную вкладуем масив с категориями.
-        foreach ($data as $id => &$node) { //Перебераем масив на ключ(id) и значение(все остальое с бд) символ & показует что если мы присвоим новое значение переменной то оно сохранится в масив data.
-            if (!$node["parent_id"]) { //Условие: если не сушествует отцовского ключа,
-                $tree[$id] = &$node; //тогда в масив, в ключ мы вкладуем полученое из цыкла значение (мы можем присвоить другое значение и тогда оно сохранится).
-            } else { //В противном случаее,
-                $data[$node["parent_id"]]["childs"][$id] = &$node; //Из масива с категориями с значения со столбца отцовского ключа, в масив "дети" под значение ключ мы влажуем значения из масива с категориями. 
+    protected function getTree(){
+        $tree = [];
+        $data = $this->data;
+        foreach ($data as $id=>&$node) {
+            if (!$node['parent_id']){
+                $tree[$id] = &$node;
+            }else{
+                $data[$node['parent_id']]['childs'][$id] = &$node;
             }
         }
-        return $tree; //возвращаем полученое дерево.
+        return $tree;
     }
 
-    protected function getMenuHtml($tree, $tab = "") //Метод с параметрами для создания дерева из масива и со знаком отступа.
-    {
-        $str = ""; //Переменной присваеваем пустую строку.
-        foreach ($tree as $id => $category) { //Перебераем масив дерева на ключ и категории.
-            $str .= $this->catToTamplate($category, $tab, $id); //Дополняем переменную методом который возвращает шаблон меню и он получает данные из перебраного масива.
+    protected function getMenuHtml($tree, $tab = ''){
+        $str = '';
+        foreach($tree as $id => $category){
+            $str .= $this->catToTemplate($category, $tab, $id);
         }
-        return $str; //Возвращаем переменную с шаблоном.
+        return $str;
     }
 
-    protected function catToTamplate($category, $tab, $id) //Метод с параметрами категории, со знаком отступа и индификатором.
-    {
+    protected function catToTemplate($category, $tab, $id){
         ob_start();
-        require $this->tpl; //подключаем шаблон
-        return ob_get_clean(); //Возвращаем его.
+        require $this->tpl;
+        return ob_get_clean();
     }
+
 }

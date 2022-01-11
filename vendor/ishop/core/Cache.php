@@ -1,41 +1,39 @@
 <?php
 
+
 namespace ishop;
+
 
 class Cache
 {
     use TSingletone;
 
-    public function set($key, $data, $seconds = 3600) //Публичный метод который нужен для создания кэша. Превый параметр нужен для создания уникального имени, 2 данные которые мы записуем в кэш, 3 на сколько мы его создаем.
-    {
-        if ($seconds) { //Условие: если кэш существует, тоесть время больше нуля,
-            $content["data"] = $data; //тогда в переменную с ключем кладем масив с данными кэша.
-            $content["end_time"] = time() + $seconds; //и в переменную с ключем кладем текущее время и время на которое мы кэшируем данные (нужно для будущего удаления кэша).
-            if (file_put_contents(CACHE . "/" . md5($key) . ".txt", serialize($content))) { //Условие: если(сохраняем кэшированые данные в папку кэш и в файл по имени кэша, сириализуем(пакуем для безопасной отправки) и отправляем весь масив со временем и данными) это выполнено,
-                return true; //тогда возвращаем истинну.
+    public function set($key, $data, $second = 3600){                               // створює файл і записує в кеш
+        if($second){
+            $content['data'] = $data;
+            $content['end_time'] = time() + $second;
+            if(file_put_contents(CACHE . '/' . md5($key) . '.txt', serialize($content))){
+                return true;
             }
         }
-        return false; //Сам по себе метод возвращает отрицательное значение.
+        return false;
     }
-
-    public function get($key) //Публичный метод который нужен для получения данных из кэша. Параметр имени кэша.
-    {
-        $file = CACHE . "/" . md5($key) . ".txt"; //Получаем кэш из папки кэширования.
-        if(file_exists($file)) { //Условие: если файл с кэшэм существует,
-            $content = unserialize(file_get_contents($file)); //тогда в переменную распаковываем и сохраняем данные кэша
-            if(time() <= $content["end_time"]){ //Условие: если текущее время меньше или равно времени на которое мы создавали кэш, 
-                return $content["data"]; //тогда возвращаем данные и время кэширования.
+    public function get($key){                                                  // бере дані з кеша і якщо устрілі удаляє
+            $file = CACHE . '/' . md5($key) . '.txt';
+            if(file_exists($file)){
+                $content = unserialize(file_get_contents($file));
+                if(time() <=$content['end_time']){
+                    return $content['data'];
+                }
+                unlink($file);
             }
-            unlink($file); //Если кэш устарел тогда удаляем его.
-        }
-        return false; //Сам по себе метод возвращает отрицательное значение.
+            return false;
     }
+    public function delete($key){
+        $file = CACHE . '/' . md5($key) . '.txt';                   // удаляє файл
+        if(file_exists($file)){
+            unlink($file);
+            }
 
-    public function delete($key) //Публичная метод который нужен для удаления кэша. Параметр имени кэша.
-    {
-        $file = CACHE . "/" . md5($key) . ".txt"; //Получаем кэш из папки кэширования.
-        if(file_exists($file)) { //Условие: если файл с кэшэм существует,
-            unlink($file); //тогда удаляем его.
-        }  
     }
 }

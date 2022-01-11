@@ -6,12 +6,14 @@ use RedBeanPHP\QueryWriter\AQueryWriter as AQueryWriter;
 use RedBeanPHP\BeanHelper as BeanHelper;
 use RedBeanPHP\RedException as RedException;
 
-/**
- * PHP 5.3 compatibility
- * We extend JsonSerializable to avoid namespace conflicts,
- * can't define interface with special namespace in PHP
- */
-if (interface_exists('\JsonSerializable')) { interface Jsonable extends \JsonSerializable {}; } else { interface Jsonable {}; }
+/* PHP 5.3 compatibility */
+if (interface_exists('\JsonSerializable')) {
+		/* We extend JsonSerializable to avoid namespace conflicts,
+		can't define interface with special namespace in PHP */
+		interface Jsonable extends \JsonSerializable {};
+} else {
+	interface Jsonable {};
+}
 
 /**
  * OODBBean (Object Oriented DataBase Bean).
@@ -30,7 +32,7 @@ if (interface_exists('\JsonSerializable')) { interface Jsonable extends \JsonSer
  * This source file is subject to the BSD/GPLv2 License that is bundled
  * with this source code in the file license.txt.
  */
-class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
+class OODBBean implements\IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 {
 	/**
 	 * FUSE error modes.
@@ -42,11 +44,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	const C_ERR_EXCEPTION = 4;
 	const C_ERR_FUNC      = 5;
 	const C_ERR_FATAL     = 6;
-
-	/**
-	 * @var boolean
-	 */
-	protected static $useFluidCount = FALSE;
 
 	/**
 	 * @var boolean
@@ -67,6 +64,11 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 * @var array
 	 */
 	protected static $aliases = array();
+
+	/**
+	 * @var boolean
+	 */
+	protected static $autoResolve = FALSE;
 
 	/**
 	 * If this is set to TRUE, the __toString function will
@@ -136,23 +138,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 * @var boolean
 	 */
 	protected $all = FALSE;
-
-	/**
-	 * If fluid count is set to TRUE then $bean->ownCount() will
-	 * return 0 if the table does not exists.
-	 * Only for backward compatibility.
-	 * Returns previouds value.
-	 *
-	 * @param boolean $toggle toggle
-	 *
-	 * @return boolean
-	 */
-	public static function useFluidCount( $toggle )
-	{
-		$old = self::$useFluidCount;
-		self::$useFluidCount = $toggle;
-		return $old;
-	}
 
 	/**
 	 * If this is set to TRUE, the __toString function will
@@ -282,13 +267,18 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	}
 
 	/**
-	 * Return list of global aliases
+	 * Enables or disables auto-resolving fetch types.
+	 * Auto-resolving aliased parent beans is convenient but can
+	 * be slower and can create infinite recursion if you
+	 * used aliases to break cyclic relations in your domain.
 	 *
-	 * @return array
+	 * @param boolean $automatic TRUE to enable automatic resolving aliased parents
+	 *
+	 * @return void
 	 */
-	public static function getAliases()
+	public static function setAutoResolve( $automatic = TRUE )
 	{
-		return self::$aliases;
+		self::$autoResolve = (boolean) $automatic;
 	}
 
 	/**
@@ -307,40 +297,66 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	{
 		foreach( $beans as $bean ) {
 			if ( $bean instanceof OODBBean ) $bean->__info[ $property ] = $value;
-			if ( $property == 'type' && !empty($bean->beanHelper)) {
-				$bean->__info['model'] = $bean->beanHelper->getModelForBean( $bean );
-			}
 		}
+
 		return $beans;
 	}
 
 	/**
-	 * Accesses the shared list of a bean.
-	 * To access beans that have been associated with the current bean
-	 * using a many-to-many relationship use sharedXList where
-	 * X is the type of beans in the list.
-	 *
-	 * Usage:
+	 * Parses the join in the with-snippet.
+	 * For instance:
 	 *
 	 * <code>
-	 * $person = R::load( 'person', $id );
-	 * $friends = $person->sharedFriendList;
+	 * $author
+	 * 	->withCondition(' @joined.detail.title LIKE ? ')
+	 *  ->ownBookList;
 	 * </code>
 	 *
-	 * The code snippet above demonstrates how to obtain all beans of
-	 * type 'friend' that have associated using an N-M relation.
-	 * This is a private method used by the magic getter / accessor.
-	 * The example illustrates usage through these accessors.
+	 * will automatically join 'detail' on book to
+	 * access the title field.
 	 *
-	 * @param string  $type    the name of the list you want to retrieve
-	 * @param OODB    $redbean instance of the RedBeanPHP OODB class
-	 * @param ToolBox $toolbox instance of ToolBox (to get access to core objects)
+	 * @note this feature requires Narrow Field Mode and Join Feature
+	 * to be both activated (default).
+	 *
+	 * @param string $type the source type for the join
+	 *
+	 * @return string
+	 */
+	private function parseJoin( $type )
+	{
+		$joinSql = '';
+		$joins = array();
+		if ( strpos($this->withSql, '@joined.' ) !== FALSE ) {
+			$writer   = $this->beanHelper->getToolBox()->getWriter();
+			$oldParts = $parts = explode( '@joined.', $this->withSql );
+			array_shift( $parts );
+			foreach($parts as $part) {
+				$explosion = explode( '.', $part );
+				$joinInfo  = array_shift( $explosion );
+				//Dont join more than once..
+				if ( !isset( $joins[$joinInfo] ) ) {
+					$joins[ $joinInfo ] = true;
+					$joinSql  .= $writer->writeJoin( $type, $joinInfo, 'LEFT' );
+				}
+			}
+			$this->withSql = implode( '', $oldParts );
+			$joinSql      .= ' WHERE ';
+		}
+		return $joinSql;
+	}
+
+	/**
+	 * Internal method.
+	 * Obtains a shared list for a certain type.
+	 *
+	 * @param string $type the name of the list you want to retrieve.
 	 *
 	 * @return array
 	 */
 	private function getSharedList( $type, $redbean, $toolbox )
 	{
 		$writer = $toolbox->getWriter();
+
 		if ( $this->via ) {
 			$oldName = $writer->getAssocTable( array( $this->__info['type'], $type ) );
 			if ( $oldName !== $this->via ) {
@@ -349,32 +365,23 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 			}
 			$this->via = NULL;
 		}
+
 		$beans = array();
 		if ($this->getID()) {
 			$type             = $this->beau( $type );
 			$assocManager     = $redbean->getAssociationManager();
 			$beans            = $assocManager->related( $this, $type, $this->withSql, $this->withParams );
 		}
+
+		$this->withSql    = '';
+		$this->withParams = array();
+
 		return $beans;
 	}
 
 	/**
-	 * Accesses the ownList. The 'own' list contains beans
-	 * associated using a one-to-many relation. The own-lists can
-	 * be accessed through the magic getter/setter property
-	 * ownXList where X is the type of beans in that list.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $book = R::load( 'book', $id );
-	 * $pages = $book->ownPageList;
-	 * </code>
-	 *
-	 * The example above demonstrates how to access the
-	 * pages associated with the book. Since this is a private method
-	 * meant to be used by the magic accessors, the example uses the
-	 * magic getter instead.
+	 * Internal method.
+	 * Obtains the own list of a certain type.
 	 *
 	 * @param string      $type   name of the list you want to retrieve
 	 * @param OODB        $oodb   The RB OODB object database instance
@@ -384,6 +391,7 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	private function getOwnList( $type, $redbean )
 	{
 		$type = $this->beau( $type );
+
 		if ( $this->aliasName ) {
 			$parentField = $this->aliasName;
 			$myFieldLink = $parentField . '_id';
@@ -395,25 +403,39 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 			$parentField = $this->__info['type'];
 			$myFieldLink = $parentField . '_id';
 		}
+
 		$beans = array();
+
 		if ( $this->getID() ) {
-			reset( $this->withParams );
-			$firstKey = count( $this->withParams ) > 0
-				? key( $this->withParams )
-				: 0;
-			if ( is_int( $firstKey ) ) {
-				$sql = "{$myFieldLink} = ? {$this->withSql}";
-				$bindings = array_merge( array( $this->getID() ), $this->withParams );
-			} else {
-				$sql = "{$myFieldLink} = :slot0 {$this->withSql}";
+
+			$firstKey = NULL;
+			if ( count( $this->withParams ) > 0 ) {
+				reset( $this->withParams );
+
+				$firstKey = key( $this->withParams );
+			}
+
+			$joinSql = $this->parseJoin( $type );
+
+			if ( !is_numeric( $firstKey ) || $firstKey === NULL ) {
 				$bindings           = $this->withParams;
 				$bindings[':slot0'] = $this->getID();
+
+				$beans = $redbean->find( $type, array(), " {$joinSql} $myFieldLink = :slot0 " . $this->withSql, $bindings );
+			} else {
+				$bindings = array_merge( array( $this->getID() ), $this->withParams );
+
+				$beans = $redbean->find( $type, array(), " {$joinSql} $myFieldLink = ? " . $this->withSql, $bindings );
 			}
-			$beans = $redbean->find( $type, array(), $sql, $bindings );
 		}
+
+		$this->withSql    = '';
+		$this->withParams = array();
+
 		foreach ( $beans as $beanFromList ) {
 			$beanFromList->__info['sys.parentcache.' . $parentField] = $this;
 		}
+
 		return $beans;
 	}
 
@@ -422,17 +444,13 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 * It is not recommended to use this method to initialize beans. Instead
 	 * use the OODB object to dispense new beans. You can use this method
 	 * if you build your own bean dispensing mechanism.
-	 * This is not recommended.
-	 *
-	 * Unless you know what you are doing, do NOT use this method.
-	 * This is for advanced users only!
 	 *
 	 * @param string     $type       type of the new bean
 	 * @param BeanHelper $beanhelper bean helper to obtain a toolbox and a model
 	 *
 	 * @return void
 	 */
-	public function initializeForDispense( $type, $beanhelper = NULL )
+	public function initializeForDispense( $type, BeanHelper $beanhelper )
 	{
 		$this->beanHelper         = $beanhelper;
 		$this->__info['type']     = $type;
@@ -441,9 +459,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 		$this->__info['tainted']  = TRUE;
 		$this->__info['changed']  = TRUE;
 		$this->__info['changelist'] = array();
-		if ( $beanhelper ) {
-			$this->__info['model'] = $this->beanHelper->getModelForBean( $this );
-		}
 		$this->properties['id']   = 0;
 	}
 
@@ -469,15 +484,12 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 * This method is meant for PHP and allows you to access beans as if
 	 * they were arrays, i.e. using array notation:
 	 *
-	 * <code>
 	 * $bean[$key] = $value;
-	 * </code>
 	 *
 	 * Note that not all PHP functions work with the array interface.
 	 *
 	 * @return ArrayIterator
 	 */
-	 #[ReturnTypeWillChange]
 	public function getIterator()
 	{
 		return new \ArrayIterator( $this->properties );
@@ -502,21 +514,16 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 		if ( is_string( $selection ) ) {
 			$selection = explode( ',', $selection );
 		}
-		if ( is_array( $selection ) ) {
-			if ( $notrim ) {
-				$selected = array_flip($selection);
-			} else {
-				$selected = array();
-				foreach ( $selection as $key => $select ) {
-					$selected[trim( $select )] = TRUE;
-				}
+
+		if ( !$notrim && is_array( $selection ) ) {
+			foreach ( $selection as $key => $selected ) {
+				$selection[$key] = trim( $selected );
 			}
-		} else {
-			$selected = FALSE;
 		}
+
 		foreach ( $array as $key => $value ) {
 			if ( $key != '__info' ) {
-				if ( !$selected || isset( $selected[$key] ) ) {
+				if ( !$selection || ( $selection && in_array( $key, $selection ) ) ) {
 					if ( is_array($value ) ) {
 						if ( isset( $value['_type'] ) ) {
 							$bean = $this->beanHelper->getToolbox()->getRedBean()->dispense( $value['_type'] );
@@ -539,16 +546,13 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 				}
 			}
 		}
+
 		return $this;
 	}
 
 	/**
-	* Imports an associative array directly into the
-	* internal property array of the bean as well as the
-	* meta property sys.orig and sets the changed flag to FALSE.
-	* This is used by the repository objects to inject database rows
-	* into the beans. It is not recommended to use this method outside
-	* of a bean repository.
+	* Fast way to import a row.
+	* Does not perform any checks.
 	*
 	* @param array $row a database row
 	*
@@ -559,7 +563,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 		$this->properties = $row;
 		$this->__info['sys.orig'] = $row;
 		$this->__info['changed'] = FALSE;
-		$this->__info['changelist'] = array();
 		return $this;
 	}
 
@@ -567,15 +570,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 * Imports data from another bean. Chainable.
 	 * Copies the properties from the source bean to the internal
 	 * property list.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $copy->importFrom( $bean );
-	 * </code>
-	 *
-	 * The example above demonstrates how to make a shallow copy
-	 * of a bean using the importFrom() method.
 	 *
 	 * @param OODBBean $sourceBean the source bean to take properties from
 	 *
@@ -602,7 +596,9 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	public function inject( OODBBean $otherBean )
 	{
 		$myID = $this->properties['id'];
+
 		$this->import( $otherBean->export( FALSE, FALSE, TRUE ) );
+
 		$this->id = $myID;
 
 		return $this;
@@ -611,18 +607,7 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	/**
 	 * Exports the bean as an array.
 	 * This function exports the contents of a bean to an array and returns
-	 * the resulting array. Depending on the parameters you can also
-	 * export an entire graph of beans, apply filters or exclude meta data.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $bookData = $book->export( TRUE, TRUE, FALSE, [ 'author' ] );
-	 * </code>
-	 *
-	 * The example above exports all bean properties to an array
-	 * called $bookData including its meta data, parent objects but without
-	 * any beans of type 'author'.
+	 * the resulting array.
 	 *
 	 * @param boolean $meta    set to TRUE if you want to export meta data as well
 	 * @param boolean $parents set to TRUE if you want to export parents as well
@@ -634,6 +619,7 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	public function export( $meta = FALSE, $parents = FALSE, $onlyMe = FALSE, $filters = array() )
 	{
 		$arr = array();
+
 		if ( $parents ) {
 			foreach ( $this as $key => $value ) {
 				if ( substr( $key, -3 ) != '_id' ) continue;
@@ -642,7 +628,9 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 				$this->$prop;
 			}
 		}
+
 		$hasFilters = is_array( $filters ) && count( $filters );
+
 		foreach ( $this as $key => $value ) {
 			if ( !$onlyMe && is_array( $value ) ) {
 				$vn = array();
@@ -652,32 +640,26 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 					$vn[] = $b->export( $meta, FALSE, FALSE, $filters );
 					$value = $vn;
 				}
-			} elseif ( $value instanceof OODBBean ) { if ( $hasFilters ) { //has to be on one line, otherwise code coverage miscounts as miss
+			} elseif ( $value instanceof OODBBean ) {
+				if ( $hasFilters ) {
 					if ( !in_array( strtolower( $value->getMeta( 'type' ) ), $filters ) ) continue;
 				}
+
 				$value = $value->export( $meta, $parents, FALSE, $filters );
 			}
+
 			$arr[$key] = $value;
 		}
+
 		if ( $meta ) {
 			$arr['__info'] = $this->__info;
 		}
+
 		return $arr;
 	}
 
 	/**
 	 * Implements isset() function for use as an array.
-	 * This allows you to use isset() on bean properties.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $book->title = 'my book';
-	 * echo isset($book['title']); //TRUE
-	 * </code>
-	 *
-	 * The example illustrates how one can apply the
-	 * isset() function to a bean.
 	 *
 	 * @param string $property name of the property you want to check
 	 *
@@ -686,6 +668,7 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	public function __isset( $property )
 	{
 		$property = $this->beau( $property );
+
 		if ( strpos( $property, 'xown' ) === 0 && ctype_upper( substr( $property, 4, 1 ) ) ) {
 			$property = substr($property, 1);
 		}
@@ -716,12 +699,7 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	}
 
 	/**
-	 * Returns the ID of the bean.
-	 * If for some reason the ID has not been set, this method will
-	 * return NULL. This is actually the same as accessing the
-	 * id property using $bean->id. The ID of a bean is it's primary
-	 * key and should always correspond with a table column named
-	 * 'id'.
+	 * Returns the ID of the bean no matter what the ID field is.
 	 *
 	 * @return string|null
 	 */
@@ -732,8 +710,7 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 
 	/**
 	 * Unsets a property of a bean.
-	 * Magic method, gets called implicitly when
-	 * performing the unset() operation
+	 * Magic method, gets called implicitly when performing the unset() operation
 	 * on a bean property.
 	 *
 	 * @param  string $property property to unset
@@ -747,11 +724,21 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 		if ( strpos( $property, 'xown' ) === 0 && ctype_upper( substr( $property, 4, 1 ) ) ) {
 			$property = substr($property, 1);
 		}
+
 		unset( $this->properties[$property] );
+
 		$shadowKey = 'sys.shadow.'.$property;
 		if ( isset( $this->__info[ $shadowKey ] ) ) unset( $this->__info[$shadowKey] );
+
 		//also clear modifiers
-		$this->clearModifiers();
+		$this->withSql    = '';
+		$this->withParams = array();
+		$this->aliasName  = NULL;
+		$this->fetchType  = NULL;
+		$this->noLoad     = FALSE;
+		$this->all        = FALSE;
+		$this->via        = NULL;
+
 		return;
 	}
 
@@ -827,19 +814,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 * its contents. Use this if you only want to add something to a list
 	 * and you have no interest in retrieving its contents from the database.
 	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $book->noLoad()->ownPage[] = $newPage;
-	 * </code>
-	 *
-	 * In the example above we add the $newPage bean to the
-	 * page list of book without loading all the pages first.
-	 * If you know in advance that you are not going to use
-	 * the contents of the list, you may use the noLoad() modifier
-	 * to make sure the queries required to load the list will not
-	 * be executed.
-	 *
 	 * @return self
 	 */
 	public function noLoad()
@@ -882,6 +856,7 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	public function alias( $aliasName )
 	{
 		$this->aliasName = $this->beau( $aliasName );
+
 		return $this;
 	}
 
@@ -918,8 +893,8 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 *
 	 * Examples:
 	 *
-	 * - oneACLRoute -> one_acl_route
-	 * - camelCase -> camel_case
+	 * * oneACLRoute -> one_acl_route
+	 * * camelCase -> camel_case
 	 *
 	 * Also caches the result to improve performance.
 	 *
@@ -932,6 +907,7 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 		static $beautifulColumns = array();
 
 		if ( ctype_lower( $property ) ) return $property;
+
 		if (
 			( strpos( $property, 'own' ) === 0 && ctype_upper( substr( $property, 3, 1 ) ) )
 			|| ( strpos( $property, 'xown' ) === 0 && ctype_upper( substr( $property, 4, 1 ) ) )
@@ -941,38 +917,16 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 			$property = preg_replace( '/List$/', '', $property );
 			return $property;
 		}
+
 		if ( !isset( $beautifulColumns[$property] ) ) {
 			$beautifulColumns[$property] = AQueryWriter::camelsSnake( $property );
 		}
+
 		return $beautifulColumns[$property];
 	}
 
 	/**
-	 * Modifiers are a powerful concept in RedBeanPHP, they make it possible
-	 * to change the way a property has to be loaded.
-	 * RedBeanPHP uses property modifiers using a prefix notation like this:
-	 *
-	 * <code>
-	 * $book->fetchAs('page')->cover;
-	 * </code>
-	 *
-	 * Here, we load a bean of type page, identified by the cover property
-	 * (or cover_id in the database). Because the modifier is called before
-	 * the property is accessed, the modifier must be remembered somehow,
-	 * this changes the state of the bean. Accessing a property causes the
-	 * bean to clear its modifiers. To clear the modifiers manually you can
-	 * use this method.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $book->with( 'LIMIT 1' );
-	 * $book->clearModifiers()->ownPageList;
-	 * </code>
-	 *
-	 * In the example above, the 'LIMIT 1' clause is
-	 * cleared before accessing the pages of the book, causing all pages
-	 * to be loaded in the list instead of just one.
+	 * Clears all modifiers.
 	 *
 	 * @return self
 	 */
@@ -1004,7 +958,9 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 		if ( strpos( $listName, 'xown' ) === 0 && ctype_upper( substr( $listName, 4, 1 ) ) ) {
 			$listName = substr($listName, 1);
 		}
+
 		$listName = lcfirst( substr( $listName, 3 ) );
+
 		return ( isset( $this->__info['sys.exclusive-'.$listName] ) && $this->__info['sys.exclusive-'.$listName] );
 	}
 
@@ -1015,18 +971,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 * properties. If the property can not be found this method will
 	 * return NULL instead.
 	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $title = $book->title;
-	 * $pages = $book->ownPageList;
-	 * $tags  = $book->sharedTagList;
-	 * </code>
-	 *
-	 * The example aboves lists several ways to invoke the magic getter.
-	 * You can use the magic setter to access properties, own-lists,
-	 * exclusive own-lists (xownLists) and shared-lists.
-	 *
 	 * @param string $property name of the property you wish to obtain the value of
 	 *
 	 * @return mixed
@@ -1036,6 +980,7 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 		$isEx          = FALSE;
 		$isOwn         = FALSE;
 		$isShared      = FALSE;
+
 		if ( !ctype_lower( $property ) ) {
 			$property = $this->beau( $property );
 			if ( strpos( $property, 'xown' ) === 0 && ctype_upper( substr( $property, 4, 1 ) ) ) {
@@ -1051,50 +996,49 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 				$isShared = TRUE;
 			}
 		}
+
 		$fieldLink      = $property . '_id';
 		$exists         = isset( $this->properties[$property] );
 
 		//If not exists and no field link and no list, bail out.
 		if ( !$exists && !isset($this->$fieldLink) && (!$isOwn && !$isShared )) {
-			$this->clearModifiers();
-			/**
-			 * Github issue:
-			 * Remove $NULL to directly return NULL #625
-			 * @@ -1097,8 +1097,7 @@ public function &__get( $property )
-			 *		$this->all        = FALSE;
-			 *		$this->via        = NULL;
-			 *
-			 * - $NULL = NULL;
-			 * - return $NULL;
-			 * + return NULL;
-			 *
-			 * leads to regression:
-			 * PHP Stack trace:
-			 * PHP 1. {main}() testje.php:0
-			 * PHP 2. RedBeanPHP\OODBBean->__get() testje.php:22
-			 * Notice: Only variable references should be returned by reference in rb.php on line 2529
-			 */
+
+			$this->withSql    = '';
+			$this->withParams = array();
+			$this->aliasName  = NULL;
+			$this->fetchType  = NULL;
+			$this->noLoad     = FALSE;
+			$this->all        = FALSE;
+			$this->via        = NULL;
+
 			$NULL = NULL;
 			return $NULL;
 		}
 
 		$hasAlias       = (!is_null($this->aliasName));
 		$differentAlias = ($hasAlias && $isOwn && isset($this->__info['sys.alias.'.$listName])) ?
-									($this->__info['sys.alias.'.$listName] !== $this->aliasName) : FALSE;
+								($this->__info['sys.alias.'.$listName] !== $this->aliasName) : FALSE;
 		$hasSQL         = ($this->withSql !== '' || $this->via !== NULL);
 		$hasAll         = (boolean) ($this->all);
 
 		//If exists and no list or exits and list not changed, bail out.
-		if ( $exists && ((!$isOwn && !$isShared ) || (!$hasSQL && !$differentAlias && !$hasAll)) ) {
-			$this->clearModifiers();
+		if ( $exists && ((!$isOwn && !$isShared ) ||  (!$hasSQL && !$differentAlias && !$hasAll)) ) {
+
+			$this->withSql    = '';
+			$this->withParams = array();
+			$this->aliasName  = NULL;
+			$this->fetchType  = NULL;
+			$this->noLoad     = FALSE;
+			$this->all        = FALSE;
+			$this->via        = NULL;
 			return $this->properties[$property];
 		}
 
 		list( $redbean, , , $toolbox ) = $this->beanHelper->getExtractedToolbox();
 
-		//If it's another bean, then we load it and return
 		if ( isset( $this->$fieldLink ) ) {
 			$this->__info['tainted'] = TRUE;
+
 			if ( isset( $this->__info["sys.parentcache.$property"] ) ) {
 				$bean = $this->__info["sys.parentcache.$property"];
 			} else {
@@ -1109,14 +1053,30 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 				$bean = NULL;
 				if ( !is_null( $this->properties[$fieldLink] ) ) {
 					$bean = $redbean->load( $type, $this->properties[$fieldLink] );
+					//If the IDs dont match, we failed to load, so try autoresolv in that case...
+					if ( $bean->id !== $this->properties[$fieldLink] && self::$autoResolve ) {
+						$type = $this->beanHelper->getToolbox()->getWriter()->inferFetchType( $this->__info['type'], $property );
+						if ( !is_null( $type) ) {
+							$bean = $redbean->load( $type, $this->properties[$fieldLink] );
+							$this->__info["sys.autoresolved.{$property}"] = $type;
+						}
+					}
 				}
 			}
-			$this->properties[$property] = $bean;
-			$this->clearModifiers();
-			return $this->properties[$property];
-		}
 
-		/* Implicit: elseif ( $isOwn || $isShared ) */
+			$this->properties[$property] = $bean;
+			$this->withSql               = '';
+			$this->withParams            = array();
+			$this->aliasName             = NULL;
+			$this->fetchType             = NULL;
+			$this->noLoad                = FALSE;
+			$this->all                   = FALSE;
+			$this->via                   = NULL;
+
+			return $this->properties[$property];
+
+		}
+		//Implicit: elseif ( $isOwn || $isShared ) {
 		if ( $this->noLoad ) {
 			$beans = array();
 		} elseif ( $isOwn ) {
@@ -1124,13 +1084,20 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 		} else {
 			$beans = $this->getSharedList( lcfirst( substr( $property, 6 ) ), $redbean, $toolbox );
 		}
+
 		$this->properties[$property]          = $beans;
 		$this->__info["sys.shadow.$property"] = $beans;
 		$this->__info['tainted']              = TRUE;
 
-		$this->clearModifiers();
-		return $this->properties[$property];
+		$this->withSql    = '';
+		$this->withParams = array();
+		$this->aliasName  = NULL;
+		$this->fetchType  = NULL;
+		$this->noLoad     = FALSE;
+		$this->all        = FALSE;
+		$this->via        = NULL;
 
+		return $this->properties[$property];
 	}
 
 	/**
@@ -1191,7 +1158,13 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 			}
 		}
 
-		$this->clearModifiers();
+		$this->withSql    = '';
+		$this->withParams = array();
+		$this->aliasName  = NULL;
+		$this->fetchType  = NULL;
+		$this->noLoad     = FALSE;
+		$this->all        = FALSE;
+		$this->via        = NULL;
 
 		$this->__info['tainted'] = TRUE;
 		$this->__info['changed'] = TRUE;
@@ -1208,7 +1181,7 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 				throw new RedException( 'Cannot cast to bean.' );
 			}
 		}
-
+		
 		if ( $isFieldLink ){
 			unset( $this->properties[ $fieldName ]);
 			$this->properties[ $property ] = NULL;
@@ -1219,21 +1192,15 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 			$value = '0';
 		} elseif ( $value === TRUE ) {
 			$value = '1';
-			/* for some reason there is some kind of bug in xdebug so that it doesnt count this line otherwise... */
-		} elseif ( $value instanceof \DateTime ) { $value = $value->format( 'Y-m-d H:i:s' ); }
+		} elseif ( $value instanceof \DateTime ) {
+			$value = $value->format( 'Y-m-d H:i:s' );
+		}
+
 		$this->properties[$property] = $value;
 	}
 
 	/**
-	 * @deprecated
-	 *
-	 * Sets a property of the bean allowing you to keep track of
-	 * the state yourself. This method sets a property of the bean and
-	 * allows you to control how the state of the bean will be affected.
-	 *
-	 * While there may be some circumstances where this method is needed,
-	 * this method is considered to be extremely dangerous.
-	 * This method is only for advanced users.
+	 * Sets a property directly, for internal use only.
 	 *
 	 * @param string  $property     property
 	 * @param mixed   $value        value
@@ -1283,22 +1250,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	}
 
 	/**
-	 * Returns a value from the data bundle.
-	 * The data bundle might contain additional data send from an SQL query,
-	 * for instance, the total number of rows. If the property cannot be
-	 * found, the default value will be returned. If no default has
-	 * been specified, this method returns NULL.
-	 *
-	 * @param string $key     key
-	 * @param mixed  $default default (defaults to NULL)
-	 *
-	 * @return mixed;
-	 */
-	public function info( $key, $default = NULL ) {
-		return ( isset( $this->__info['data.bundle'][$key] ) ) ? $this->__info['data.bundle'][$key] : $default;
-	}
-
-	/**
 	 * Gets and unsets a meta property.
 	 * Moves a meta property out of the bean.
 	 * This is a short-cut method that can be used instead
@@ -1334,9 +1285,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	public function setMeta( $path, $value )
 	{
 		$this->__info[$path] = $value;
-		if ( $path == 'type' && !empty($this->beanHelper)) {
-			$this->__info['model'] = $this->beanHelper->getModelForBean( $this );
-		}
 
 		return $this;
 	}
@@ -1381,17 +1329,22 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 */
 	public function __call( $method, $args )
 	{
-		if ( empty( $this->__info['model'] ) ) {
-			return NULL;
-		}
-
 		$overrideDontFail = FALSE;
 		if ( strpos( $method, '@' ) === 0 ) {
 			$method = substr( $method, 1 );
 			$overrideDontFail = TRUE;
 		}
 
-		if ( !is_callable( array( $this->__info['model'], $method ) ) ) {
+		if ( !isset( $this->__info['model'] ) ) {
+			$model = $this->beanHelper->getModelForBean( $this );
+
+			if ( !$model ) {
+				return NULL;
+			}
+
+			$this->__info['model'] = $model;
+		}
+		if ( !method_exists( $this->__info['model'], $method ) ) {
 
 			if ( self::$errorHandlingFUSE === FALSE || $overrideDontFail ) {
 				return NULL;
@@ -1471,7 +1424,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 *
 	 * @return void
 	 */
-	 #[ReturnTypeWillChange]
 	public function offsetSet( $offset, $value )
 	{
 		$this->__set( $offset, $value );
@@ -1489,7 +1441,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 *
 	 * @return boolean
 	 */
-	 #[ReturnTypeWillChange]
 	public function offsetExists( $offset )
 	{
 		return $this->__isset( $offset );
@@ -1508,7 +1459,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 *
 	 * @return void
 	 */
-	 #[ReturnTypeWillChange]
 	public function offsetUnset( $offset )
 	{
 		$this->__unset( $offset );
@@ -1527,7 +1477,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 *
 	 * @return mixed
 	 */
-	 #[ReturnTypeWillChange]
 	public function &offsetGet( $offset )
 	{
 		return $this->__get( $offset );
@@ -1550,30 +1499,8 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	}
 
 	/**
-	 * Prepares to load a bean using the bean type specified by
-	 * another property.
-	 * Similar to fetchAs but uses a column instead of a direct value.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $car = R::load( 'car', $id );
-	 * $engine = $car->poly('partType')->part;
-	 * </code>
-	 *
-	 * In the example above, we have a bean of type car that
-	 * may consists of several parts (i.e. chassis, wheels).
-	 * To obtain the 'engine' we access the property 'part'
-	 * using the type (i.e. engine) specified by the property
-	 * indicated by the argument of poly().
-	 * This essentially is a polymorph relation, hence the name.
-	 * In database this relation might look like this:
-	 *
-	 * partType | part_id
-	 * --------------------
-	 * engine   | 1020300
-	 * wheel    | 4820088
-	 * chassis  | 7823122
+	 * For polymorphic bean relations.
+	 * Same as fetchAs but uses a column instead of a direct value.
 	 *
 	 * @param string $field field name to use for mapping
 	 *
@@ -1591,18 +1518,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 *
 	 * Can be used together with with, withCondition, alias and fetchAs.
 	 *
-	 * <code>
-	 * $task
-	 *    ->withCondition(' priority >= ? ', [ $priority ])
-	 *    ->traverse('ownTaskList', function( $t ) use ( &$todo ) {
-	 *       $todo[] = $t->descr;
-	 *    } );
-	 * </code>
-	 *
-	 * In the example, we create a to-do list by traversing a
-	 * hierarchical list of tasks while filtering out all tasks
-	 * having a low priority.
-	 *
 	 * @param string $property property
 	 * @param callable $function function
 	 * @param integer $maxDepth maximum depth for traversal
@@ -1610,7 +1525,7 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 * @return OODBBean
 	 * @throws RedException
 	 */
-	public function traverse( $property, $function, $maxDepth = NULL, $depth = 1 )
+	public function traverse( $property, $function, $maxDepth = NULL )
 	{
 		$this->via = NULL;
 		if ( strpos( $property, 'shared' ) !== FALSE ) {
@@ -1633,13 +1548,15 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 		if ( !is_array( $beans ) ) $beans = array( $beans );
 
 		foreach( $beans as $bean ) {
-			$function( $bean, $depth );
+			/** @var OODBBean $bean */
+			$function( $bean );
+
 			$bean->fetchType  = $oldFetchType;
 			$bean->aliasName  = $oldAliasName;
 			$bean->withSql    = $oldWith;
 			$bean->withParams = $oldBindings;
 
-			$bean->traverse( $property, $function, $maxDepth, $depth + 1 );
+			$bean->traverse( $property, $function, $maxDepth );
 		}
 
 		return $this;
@@ -1647,28 +1564,10 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 
 	/**
 	 * Implementation of Countable interface. Makes it possible to use
-	 * count() function on a bean. This method gets invoked if you use
-	 * the count() function on a bean. The count() method will return
-	 * the number of properties of the bean, this includes the id property.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $bean = R::dispense('bean');
-	 * $bean->property1 = 1;
-	 * $bean->property2 = 2;
-	 * echo count($bean); //prints 3 (cause id is also a property)
-	 * </code>
-	 *
-	 * The example above will print the number 3 to stdout.
-	 * Although we have assigned values to just two properties, the
-	 * primary key id is also a property of the bean and together
-	 * that makes 3. Besides using the count() function, you can also
-	 * call this method using a method notation: $bean->count().
+	 * count() function on a bean.
 	 *
 	 * @return integer
 	 */
-	 #[ReturnTypeWillChange]
 	public function count()
 	{
 		return count( $this->properties );
@@ -1677,18 +1576,7 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	/**
 	 * Checks whether a bean is empty or not.
 	 * A bean is empty if it has no other properties than the id field OR
-	 * if all the other properties are 'empty()' (this might
-	 * include NULL and FALSE values).
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $newBean = R::dispense( 'bean' );
-	 * $newBean->isEmpty(); // TRUE
-	 * </code>
-	 *
-	 * The example above demonstrates that newly dispensed beans are
-	 * considered 'empty'.
+	 * if all the other property are empty().
 	 *
 	 * @return boolean
 	 */
@@ -1709,19 +1597,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 
 	/**
 	 * Chainable setter.
-	 * This method is actually the same as just setting a value
-	 * using a magic setter (->property = ...). The difference
-	 * is that you can chain these setters like this:
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $book->setAttr('title', 'mybook')->setAttr('author', 'me');
-	 * </code>
-	 *
-	 * This is the same as setting both properties $book->title and
-	 * $book->author. Sometimes a chained notation can improve the
-	 * readability of the code.
 	 *
 	 * @param string $property the property of the bean
 	 * @param mixed  $value    the value you want to set
@@ -1736,19 +1611,8 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	}
 
 	/**
-	 * Convience method.
-	 * Unsets all properties in the internal properties array.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $bean->property = 1;
-	 * $bean->unsetAll( array( 'property' ) );
-	 * $bean->property; //NULL
-	 * </code>
-	 *
-	 * In the example above the 'property' of the bean will be
-	 * unset, resulting in the getter returning NULL instead of 1.
+	 * Comfort method.
+	 * Unsets all properties in array.
 	 *
 	 * @param array $properties properties you want to unset.
 	 *
@@ -1761,25 +1625,14 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 				unset( $this->properties[$prop] );
 			}
 		}
+
 		return $this;
 	}
 
 	/**
 	 * Returns original (old) value of a property.
 	 * You can use this method to see what has changed in a
-	 * bean. The original value of a property is the value that
-	 * this property has had since the bean has been retrieved
-	 * from the databases.
-	 *
-	 * <code>
-	 * $book->title = 'new title';
-	 * $oldTitle = $book->old('title');
-	 * </code>
-	 *
-	 * The example shows how to use the old() method.
-	 * Here we set the title property of the bean to 'new title', then
-	 * we obtain the original value using old('title') and store it in
-	 * a variable $oldTitle.
+	 * bean.
 	 *
 	 * @param string $property name of the property you want the old value of
 	 *
@@ -1798,7 +1651,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 
 	/**
 	 * Convenience method.
-	 *
 	 * Returns TRUE if the bean has been changed, or FALSE otherwise.
 	 * Same as $bean->getMeta('tainted');
 	 * Note that a bean becomes tainted as soon as you retrieve a list from
@@ -1833,23 +1685,9 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	}
 
 	/**
-	 * Returns TRUE if the specified list exists, has been loaded
-	 * and has been changed:
-	 * beans have been added or deleted.
-	 * This method will not tell you anything about
+	 * Returns TRUE if the specified list exists, has been loaded and has been changed:
+	 * beans have been added or deleted. This method will not tell you anything about
 	 * the state of the beans in the list.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $book->hasListChanged( 'ownPage' ); // FALSE
-	 * array_pop( $book->ownPageList );
-	 * $book->hasListChanged( 'ownPage' ); // TRUE
-	 * </code>
-	 *
-	 * In the example, the first time we ask whether the
-	 * own-page list has been changed we get FALSE. Then we pop
-	 * a page from the list and the hasListChanged() method returns TRUE.
 	 *
 	 * @param string $property name of the list to check
 	 *
@@ -1868,22 +1706,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	/**
 	 * Clears (syncs) the history of the bean.
 	 * Resets all shadow values of the bean to their current value.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $book->title = 'book';
-	 * echo $book->hasChanged( 'title' ); //TRUE
-	 * R::store( $book );
-	 * echo $book->hasChanged( 'title' ); //TRUE
-	 * $book->clearHistory();
-	 * echo $book->hasChanged( 'title' ); //FALSE
-	 * </code>
-	 *
-	 * Note that even after store(), the history of the bean still
-	 * contains the act of changing the title of the book.
-	 * Only after invoking clearHistory() will the history of the bean
-	 * be cleared and will hasChanged() return FALSE.
 	 *
 	 * @return self
 	 */
@@ -1933,21 +1755,28 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	public function link( $typeOrBean, $qualification = array() )
 	{
 		if ( is_string( $typeOrBean ) ) {
+
 			$typeOrBean = AQueryWriter::camelsSnake( $typeOrBean );
+
 			$bean = $this->beanHelper->getToolBox()->getRedBean()->dispense( $typeOrBean );
+
 			if ( is_string( $qualification ) ) {
 				$data = json_decode( $qualification, TRUE );
 			} else {
 				$data = $qualification;
 			}
+
 			foreach ( $data as $key => $value ) {
 				$bean->$key = $value;
 			}
 		} else {
 			$bean = $typeOrBean;
 		}
+
 		$list = 'own' . ucfirst( $bean->getMeta( 'type' ) );
+
 		array_push( $this->$list, $bean );
+
 		return $bean;
 	}
 
@@ -1958,100 +1787,26 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	 * method will only return a reference to the bean, changing it
 	 * and storing the bean will not update the related one-bean.
 	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $author = R::load( 'author', $id );
-	 * $biography = $author->one( 'bio' );
-	 * </code>
-	 *
-	 * The example loads the biography associated with the author
-	 * using a one-to-one relation. These relations are generally not
-	 * created (nor supported) by RedBeanPHP.
-	 *
 	 * @param  $type type of bean to load
 	 *
 	 * @return OODBBean
 	 */
 	public function one( $type ) {
-		return $this->beanHelper
-			->getToolBox()
-			->getRedBean()
-			->load( $type, $this->id );
+		return $this->beanHelper->getToolBox()->getRedBean()->load( $type, $this->id );
 	}
 
 	/**
-	 * Reloads the bean.
 	 * Returns the same bean freshly loaded from the database.
-	 * This method is equal to the following code:
-	 *
-	 * <code>
-	 * $id = $bean->id;
-	 * $type = $bean->getMeta( 'type' );
-	 * $bean = R::load( $type, $id );
-	 * </code>
-	 *
-	 * This is just a convenience method to reload beans
-	 * quickly.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * R::exec( ...update query... );
-	 * $book = $book->fresh();
-	 * </code>
-	 *
-	 * The code snippet above illustrates how to obtain changes
-	 * caused by an UPDATE query, simply by reloading the bean using
-	 * the fresh() method.
 	 *
 	 * @return OODBBean
 	 */
 	public function fresh()
 	{
-		return $this->beanHelper
-			->getToolbox()
-			->getRedBean()
-			->load( $this->getMeta( 'type' ), $this->properties['id'] );
+		return $this->beanHelper->getToolbox()->getRedBean()->load( $this->getMeta( 'type' ), $this->properties['id'] );
 	}
 
 	/**
 	 * Registers a association renaming globally.
-	 * Use via() and link() to associate shared beans using a
-	 * 3rd bean that will act as an intermediate type. For instance
-	 * consider an employee and a project. We could associate employees
-	 * with projects using a sharedEmployeeList. But, maybe there is more
-	 * to the relationship than just the association. Maybe we want
-	 * to qualify the relation between a project and an employee with
-	 * a role: 'developer', 'designer', 'tester' and so on. In that case,
-	 * it might be better to introduce a new concept to reflect this:
-	 * the participant. However, we still want the flexibility to
-	 * query our employees in one go. This is where link() and via()
-	 * can help. You can still introduce the more applicable
-	 * concept (participant) and have your easy access to the shared beans.
-	 *
-	 * <code>
-	 * $Anna = R::dispense( 'employee' );
-	 * $Anna->badge   = 'Anna';
-	 * $project = R::dispense( 'project' );
-	 * $project->name = 'x';
-	 * $Anna->link( 'participant', array(
-	 *	 'arole' => 'developer'
-	 *	) )->project = $project;
-	 * R::storeAll( array( $project,  $Anna )  );
-	 * $employees = $project
-	 *	->with(' ORDER BY badge ASC ')
-	 *  ->via( 'participant' )
-	 *  ->sharedEmployee;
-	 * </code>
-	 *
-	 * This piece of code creates a project and an employee.
-	 * It then associates the two using a via-relation called
-	 * 'participant' ( employee <-> participant <-> project ).
-	 * So, there will be a table named 'participant' instead of
-	 * a table named 'employee_project'. Using the via() method, the
-	 * employees associated with the project are retrieved 'via'
-	 * the participant table (and an SQL snippet to order them by badge).
 	 *
 	 * @param string $via type you wish to use for shared lists
 	 *
@@ -2067,20 +1822,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	/**
 	 * Counts all own beans of type $type.
 	 * Also works with alias(), with() and withCondition().
-	 * Own-beans or xOwn-beans (exclusively owned beans) are beans
-	 * that have been associated using a one-to-many relation. They can
-	 * be accessed through the ownXList where X is the type of the
-	 * associated beans.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $Bill->alias( 'author' )
-	 *      ->countOwn( 'book' );
-	 * </code>
-	 *
-	 * The example above counts all the books associated with 'author'
-	 * $Bill.
 	 *
 	 * @param string $type the type of bean you want to count
 	 *
@@ -2089,32 +1830,38 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	public function countOwn( $type )
 	{
 		$type = $this->beau( $type );
+
 		if ( $this->aliasName ) {
 			$myFieldLink     = $this->aliasName . '_id';
+
 			$this->aliasName = NULL;
 		} else {
 			$myFieldLink = $this->__info['type'] . '_id';
 		}
+
 		$count = 0;
+
 		if ( $this->getID() ) {
-			reset( $this->withParams );
-			$firstKey = count( $this->withParams ) > 0
-				? key( $this->withParams )
-				: 0;
-			if ( is_int( $firstKey ) ) {
-				$sql = "{$myFieldLink} = ? {$this->withSql}";
-				$bindings = array_merge( array( $this->getID() ), $this->withParams );
-			} else {
-				$sql = "{$myFieldLink} = :slot0 {$this->withSql}";
-				$bindings           = $this->withParams;
-				$bindings[':slot0'] = $this->getID();
+
+			$firstKey = NULL;
+			if ( count( $this->withParams ) > 0 ) {
+				reset( $this->withParams );
+				$firstKey = key( $this->withParams );
 			}
-			if ( !self::$useFluidCount ) {
-				$count = $this->beanHelper->getToolbox()->getWriter()->queryRecordCount( $type, array(), $sql, $bindings );
+
+			$joinSql = $this->parseJoin( $type );
+
+			if ( !is_numeric( $firstKey ) || $firstKey === NULL ) {
+					$bindings           = $this->withParams;
+					$bindings[':slot0'] = $this->getID();
+					$count              = $this->beanHelper->getToolbox()->getWriter()->queryRecordCount( $type, array(), " {$joinSql} $myFieldLink = :slot0 " . $this->withSql, $bindings );
 			} else {
-				$count = $this->beanHelper->getToolbox()->getRedBean()->count( $type, $sql, $bindings );
+					$bindings = array_merge( array( $this->getID() ), $this->withParams );
+					$count    = $this->beanHelper->getToolbox()->getWriter()->queryRecordCount( $type, array(), " {$joinSql} $myFieldLink = ? " . $this->withSql, $bindings );
 			}
+
 		}
+
 		$this->clearModifiers();
 		return (int) $count;
 	}
@@ -2122,21 +1869,6 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	/**
 	 * Counts all shared beans of type $type.
 	 * Also works with via(), with() and withCondition().
-	 * Shared beans are beans that have an many-to-many relation.
-	 * They can be accessed using the sharedXList, where X the
-	 * type of the shared bean.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $book = R::dispense( 'book' );
-	 * $book->sharedPageList = R::dispense( 'page', 5 );
-	 * R::store( $book );
-	 * echo $book->countShared( 'page' );
-	 * </code>
-	 *
-	 * The code snippet above will output '5', because there
-	 * are 5 beans of type 'page' in the shared list.
 	 *
 	 * @param string $type type of bean you wish to count
 	 *
@@ -2147,19 +1879,24 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 		$toolbox = $this->beanHelper->getToolbox();
 		$redbean = $toolbox->getRedBean();
 		$writer  = $toolbox->getWriter();
+
 		if ( $this->via ) {
 			$oldName = $writer->getAssocTable( array( $this->__info['type'], $type ) );
+
 			if ( $oldName !== $this->via ) {
 				//set the new renaming rule
 				$writer->renameAssocTable( $oldName, $this->via );
 				$this->via = NULL;
 			}
 		}
+
 		$type  = $this->beau( $type );
 		$count = 0;
+
 		if ( $this->getID() ) {
 			$count = $redbean->getAssociationManager()->relatedCount( $this, $type, $this->withSql, $this->withParams );
 		}
+
 		$this->clearModifiers();
 		return (integer) $count;
 	}
@@ -2225,34 +1962,13 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 
 	/**
 	 * Tests whether the database identities of two beans are equal.
-	 * Two beans are considered 'equal' if:
 	 *
-	 * a. the types of the beans match
-	 * b. the ids of the beans match
-	 *
-	 * Returns TRUE if the beans are considered equal according to this
-	 * specification and FALSE otherwise.
-	 *
-	 * Usage:
-	 *
-	 * <code>
-	 * $coffee->fetchAs( 'flavour' )->taste->equals(
-	 *    R::enum('flavour:mocca')
-	 * );
-	 * </code>
-	 *
-	 * The example above compares the flavour label 'mocca' with
-	 * the flavour label attachec to the $coffee bean. This illustrates
-	 * how to use equals() with RedBeanPHP-style enums.
-	 *
-	 * @param OODBBean|null $bean other bean
+	 * @param OODBBean $bean other bean
 	 *
 	 * @return boolean
 	 */
 	public function equals(OODBBean $bean)
 	{
-		if ( is_null($bean) ) return false;
-
 		return (bool) (
 			   ( (string) $this->properties['id'] === (string) $bean->properties['id'] )
 			&& ( (string) $this->__info['type']   === (string) $bean->__info['type']   )
@@ -2260,31 +1976,16 @@ class OODBBean implements \IteratorAggregate,\ArrayAccess,\Countable,Jsonable
 	}
 
 	/**
-	 * Magic method jsonSerialize,
-	 * implementation for the \JsonSerializable interface,
-	 * this method gets called by json_encode and
-	 * facilitates a better JSON representation
-	 * of the bean. Exports the bean on JSON serialization,
-	 * for the JSON fans.
-	 *
-	 * Models can override jsonSerialize (issue #651) by
-	 * implementing a __jsonSerialize method which should return
-	 * an array. The __jsonSerialize override gets called with
-	 * the @ modifier to prevent errors or warnings.
+	 * Magic method jsonSerialize, implementation for the \JsonSerializable interface,
+	 * this method gets called by json_encode and facilitates a better JSON representation
+	 * of the bean. Exports the bean on JSON serialization, for the JSON fans.
 	 *
 	 * @see  http://php.net/manual/en/class.jsonserializable.php
 	 *
 	 * @return array
 	 */
-	 #[ReturnTypeWillChange]
 	public function jsonSerialize()
 	{
-		$json = $this->__call( '@__jsonSerialize', array( ) );
-
-		if ( $json !== NULL ) {
-			return $json;
-		}
-
 		return $this->export();
 	}
 }

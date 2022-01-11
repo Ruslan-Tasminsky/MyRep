@@ -73,19 +73,7 @@ abstract class Repository
 	}
 
 	/**
-	 * Fully processes a bean and updates the associated records in the database.
-	 * First the bean properties will be grouped as 'embedded' bean,
-	 * addition, deleted 'trash can' or residue. Next, the different groups
-	 * of beans will be processed accordingly and the reference bean (i.e.
-	 * the one that was passed to the method as an argument) will be stored.
-	 * Each type of list (own/shared) has 3 bean processors: 
-	 *
-	 * - trashCanProcessor : removes the bean or breaks its association with the current bean
-	 * - additionProcessor : associates the bean with the current one
-	 * - residueProcessor  : manages beans in lists that 'remain' but may need to be updated
-	 * 
-	 * This method first groups the beans and then calls the
-	 * internal processing methods.
+	 * Stores a bean and its lists in one run.
 	 *
 	 * @param OODBBean $bean bean to process
 	 *
@@ -152,15 +140,27 @@ abstract class Repository
 	}
 
 	/**
-	 * Processes a list of beans from a bean.
-	 * A bean may contain lists. This
-	 * method handles shared addition lists; i.e.
-	 * the $bean->sharedObject properties.
-	 * Shared beans will be associated with eachother using the
-	 * Association Manager.
+	 * Processes an embedded bean.
 	 *
-	 * @param OODBBean $bean            the bean
-	 * @param array    $sharedAdditions list with shared additions
+	 * @param OODBBean|SimpleModel $embeddedBean the bean or model
+	 *
+	 * @return integer
+	 */
+	protected function prepareEmbeddedBean( $embeddedBean )
+	{
+		if ( !$embeddedBean->id || $embeddedBean->getMeta( 'tainted' ) ) {
+			$this->store( $embeddedBean );
+		}
+
+		return $embeddedBean->id;
+	}
+
+	/**
+	 * Processes a list of beans from a bean. A bean may contain lists. This
+	 * method handles shared addition lists; i.e. the $bean->sharedObject properties.
+	 *
+	 * @param OODBBean $bean             the bean
+	 * @param array            $sharedAdditions  list with shared additions
 	 *
 	 * @return void
 	 */
@@ -176,13 +176,10 @@ abstract class Repository
 	}
 
 	/**
-	 * Processes a list of beans from a bean.
-	 * A bean may contain lists. This
-	 * method handles own lists; i.e.
-	 * the $bean->ownObject properties.
-	 * A residue is a bean in an own-list that stays
-	 * where it is. This method checks if there have been any
-	 * modification to this bean, in that case
+	 * Processes a list of beans from a bean. A bean may contain lists. This
+	 * method handles own lists; i.e. the $bean->ownObject properties.
+	 * A residue is a bean in an own-list that stays where it is. This method
+	 * checks if there have been any modification to this bean, in that case
 	 * the bean is stored once again, otherwise the bean will be left untouched.
 	 *
 	 * @param array    $ownresidue list to process
@@ -220,7 +217,7 @@ abstract class Repository
 			$alias = $bean->getMeta( 'sys.alias.' . $trash->getMeta( 'type' ) );
 			if ( $alias ) $myFieldLink = $alias . '_id';
 
-			if ( $trash->getMeta( 'sys.garbage' ) === TRUE ) {
+			if ( $trash->getMeta( 'sys.garbage' ) === true ) {
 				$this->trash( $trash );
 			} else {
 				$trash->$myFieldLink = NULL;
@@ -231,10 +228,6 @@ abstract class Repository
 
 	/**
 	 * Unassociates the list items in the trashcan.
-	 * This bean processor processes the beans in the shared trash can.
-	 * This group of beans has been deleted from a shared list.
-	 * The affected beans will no longer be associated with the bean
-	 * that contains the shared list.
 	 *
 	 * @param OODBBean $bean           bean to process
 	 * @param array    $sharedTrashcan list to process
@@ -250,10 +243,6 @@ abstract class Repository
 
 	/**
 	 * Stores all the beans in the residue group.
-	 * This bean processor processes the beans in the shared residue
-	 * group. This group of beans 'remains' in the list but might need
-	 * to be updated or synced. The affected beans will be stored
-	 * to perform the required database queries.
 	 *
 	 * @param OODBBean $bean          bean to process
 	 * @param array    $sharedresidue list to process
@@ -290,9 +279,8 @@ abstract class Repository
 	}
 
 	/**
-	 * Converts an embedded bean to an ID, removes the bean property and
-	 * stores the bean in the embedded beans array. The id will be
-	 * assigned to the link field property, i.e. 'bean_id'.
+	 * Converts an embedded bean to an ID, removed the bean property and
+	 * stores the bean in the embedded beans array.
 	 *
 	 * @param array    $embeddedBeans destination array for embedded bean
 	 * @param OODBBean $bean          target bean to process
@@ -304,10 +292,7 @@ abstract class Repository
 	protected function processEmbeddedBean( &$embeddedBeans, $bean, $property, OODBBean $value )
 	{
 		$linkField = $property . '_id';
-		if ( !$value->id || $value->getMeta( 'tainted' ) ) {
-			$this->store( $value );
-		}
-		$id = $value->id;
+		$id = $this->prepareEmbeddedBean( $value );
 		if ($bean->$linkField != $id) $bean->$linkField = $id;
 		$bean->setMeta( 'cast.' . $linkField, 'id' );
 		$embeddedBeans[$linkField] = $value;
@@ -332,14 +317,7 @@ abstract class Repository
 	/**
 	 * Checks whether a OODBBean bean is valid.
 	 * If the type is not valid or the ID is not valid it will
-	 * throw an exception: Security. To be valid a bean
-	 * must abide to the following rules:
-	 *
-	 * - It must have an primary key id property named: id
-	 * - It must have a type
-	 * - The type must conform to the RedBeanPHP naming policy
-	 * - All properties must be valid
-	 * - All values must be valid
+	 * throw an exception: Security.
 	 *
 	 * @param OODBBean $bean the bean that needs to be checked
 	 *
@@ -374,39 +352,6 @@ abstract class Repository
 				throw new RedException( "Invalid Bean property: property $prop" );
 			}
 		}
-	}
-
-	/**
-	 * Dispenses a new bean (a OODBBean Bean Object)
-	 * of the specified type. Always
-	 * use this function to get an empty bean object. Never
-	 * instantiate a OODBBean yourself because it needs
-	 * to be configured before you can use it with RedBean. This
-	 * function applies the appropriate initialization /
-	 * configuration for you.
-	 *
-	 * To use a different class for beans (instead of OODBBean) set:
-	 * REDBEAN_OODBBEAN_CLASS to the name of the class to be used.
-	 *
-	 * @param string  $type              type of bean you want to dispense
-	 * @param int     $number            number of beans you would like to get
-	 * @param boolean $alwaysReturnArray if TRUE always returns the result as an array
-	 *
-	 * @return OODBBean
-	 */
-	public function dispense( $type, $number = 1, $alwaysReturnArray = FALSE )
-	{
-		$OODBBEAN = defined( 'REDBEAN_OODBBEAN_CLASS' ) ? REDBEAN_OODBBEAN_CLASS : '\RedBeanPHP\OODBBean';
-		$beans = array();
-		for ( $i = 0; $i < $number; $i++ ) {
-			$bean = new $OODBBEAN;
-			$bean->initializeForDispense( $type, $this->oodb->getBeanHelper() );
-			$this->check( $bean );
-			$this->oodb->signal( 'dispense', $bean );
-			$beans[] = $bean;
-		}
-
-		return ( count( $beans ) === 1 && !$alwaysReturnArray ) ? array_pop( $beans ) : $beans;
 	}
 
 	/**
@@ -457,15 +402,6 @@ abstract class Repository
 
 	/**
 	 * Finds a BeanCollection.
-	 * Given a type, an SQL snippet and optionally some parameter bindings
-	 * this methods returns a BeanCollection for your query.
-	 *
-	 * The BeanCollection represents a collection of beans and
-	 * makes it possible to use database cursors. The BeanCollection
-	 * has a method next() to obtain the first, next and last bean
-	 * in the collection. The BeanCollection does not implement the array
-	 * interface nor does it try to act like an array because it cannot go
-	 * backward or rewind itself.
 	 *
 	 * @param string $type     type of beans you are looking for
 	 * @param string $sql      SQL to be used in query
@@ -581,45 +517,20 @@ abstract class Repository
 	 *
 	 * @return array
 	 */
-	public function convertToBeans( $type, $rows, $mask = '__meta' )
+	public function convertToBeans( $type, $rows, $mask = NULL )
 	{
-		$masktype = gettype( $mask );
-		switch ( $masktype ) {
-			case 'string':
-				break;
-			case 'array':
-				$maskflip = array();
-				foreach ( $mask as $m ) {
-					if ( !is_string( $m ) ) {
-						$mask = NULL;
-						$masktype = 'NULL';
-						break 2;
-					}
-					$maskflip[$m] = TRUE;
-				}
-				$mask = $maskflip;
-				break;
-			default:
-				$mask = NULL;
-				$masktype = 'NULL';
-		}
+		$masklen = 0;
+		if ( $mask !== NULL ) $masklen = mb_strlen( $mask );
 
 		$collection                  = array();
 		$this->stash[$this->nesting] = array();
 		foreach ( $rows as $row ) {
-			if ( $mask !== NULL ) {
-				$meta = array();
+			$meta = array();
+			if ( !is_null( $mask ) ) {
 				foreach( $row as $key => $value ) {
-					if ( $masktype === 'string' ) {
-						if ( strpos( $key, $mask ) === 0 ) {
-							unset( $row[$key] );
-							$meta[$key] = $value;
-						}
-					} elseif ( $masktype === 'array' ) {
-						if ( isset( $mask[$key] ) ) {
-							unset( $row[$key] );
-							$meta[$key] = $value;
-						}
+					if ( strpos( $key, $mask ) === 0 ) {
+						unset( $row[$key] );
+						$meta[$key] = $value;
 					}
 				}
 			}
@@ -656,12 +567,17 @@ abstract class Repository
 		}
 
 		try {
-			$count = (int) $this->writer->queryRecordCount( $type, array(), $addSQL, $bindings );
+			return (int) $this->writer->queryRecordCount( $type, array(), $addSQL, $bindings );
 		} catch ( SQLException $exception ) {
-			$this->handleException( $exception );
-			$count = 0;
+			if ( !$this->writer->sqlStateIn( $exception->getSQLState(), array(
+				 QueryWriter::C_SQLSTATE_NO_SUCH_TABLE,
+				 QueryWriter::C_SQLSTATE_NO_SUCH_COLUMN ),
+				 $exception->getDriverDetails() ) ) {
+				throw $exception;
+			}
 		}
-		return $count;
+
+		return 0;
 	}
 
 	/**
@@ -689,13 +605,12 @@ abstract class Repository
 			}
 		}
 		try {
-			$deleted = $this->writer->deleteRecord( $bean->getMeta( 'type' ), array( 'id' => array( $bean->id ) ), NULL );
+			$this->writer->deleteRecord( $bean->getMeta( 'type' ), array( 'id' => array( $bean->id ) ), NULL );
 		} catch ( SQLException $exception ) {
 			$this->handleException( $exception );
 		}
 		$bean->id = 0;
 		$this->oodb->signal( 'after_delete', $bean );
-		return isset($deleted) ? $deleted : 0;
 	}
 
 	/**
@@ -714,11 +629,7 @@ abstract class Repository
 	}
 
 	/**
-	 * Trash all beans of a given type.
-	 * Wipes an entire type of bean. After this operation there
-	 * will be no beans left of the specified type.
-	 * This method will ignore exceptions caused by database
-	 * tables that do not exist.
+	 * Trash all beans of a given type. Wipes an entire type of bean.
 	 *
 	 * @param string $type type of bean you wish to delete all instances of
 	 *

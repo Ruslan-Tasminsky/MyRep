@@ -1,61 +1,62 @@
 <?php
 
+
 namespace ishop\base;
 
-class View
+
+use mysql_xdevapi\Exception;
+
+ class View
 {
-   public $route;
-   public $controller;
-   public $model;
-   public $view;
-   public $prefix;
-   public $layout;
-   public $data = [];
-   public $meta = [];
+    public $route;
+    public $controller;
+    public $model;
+    public $layout;
+    public $view;
+    public $prefix;
+    public $data = [];
+    public $meta = [];
 
-   public function __construct($route, $layout = "", $view = "", $meta) //Публичный конструктор который принимает текущий маршрут, два пустых параметра и пустой масив.
-   {
-      $this->route = $route; //Присваеваем этому свойству текущий маршрут.
-      $this->controller = $route["controller"]; //Присваеваем этому свойству имя контроллера в котором она вызывается и которая хранится в свойстве с текущим маршрутом.
-      $this->model = $route["controller"]; //
-      $this->view = $view; //Присваеваем этому свойству то что было присвоено параметру который принял конструктор.
-      $this->prefix = $route["prefix"]; //Присваеваем этому свойству префикс (будет либо admin для админской части, либо ничего для пользовательской части).
-      $this->meta = $meta; //Присваеваем этому свойству пустой масив.
+    public function __construct($route, $layout = '', $view = '', $meta = '')
+    {
+        $this->route = $route;
+        $this->controller = $route['controller'];
+        $this->model = $route['controller'];
+        $this->view = $view;
+        $this->prefix = $route['prefix'];
+        $this->meta = $meta;
+        if($layout === false){
+           $this->layout = false;
+        }else{
+            $this->layout = $layout ?: LAYOUT;
+        }
 
-      if ($layout === false) { //Условие: если параметр $layout строго равен false (пустая строка в этом случаее false-ом не счетается),
-         $this->layout = false; //тогда свойство layout также равняем false.
-      } else { //В противном случаее,
-         $this->layout = $layout ?: LAYOUT; //если в параметр $layout передан шаблон мы возьмем его, в противном случаее (если передана пустая строка) берем значение константы LAYOUT и присваеваем это свойству layout.
-      }
-   }
-
-   public function render($data) //Публичный метод который будет формировать страницу для пользователя, также он принимает данные переданые в переменную и вызивать будем его в классе Controller.
-   {
-      if(is_array($data)) extract($data); //Условие: если $datа является масивом, тогда раскрываем и получаем с него отдельные его елементы.
-      $viewFile = APP . "/views/{$this->prefix}{$this->controller}/{$this->view}.php"; //Путь к файлу с видом присваеваем переменной. 
-      if (is_file($viewFile)) { //Условие: если $viewFile является файлом,
-         ob_start(); //Стартуем буферизацию.
-         require_once $viewFile; //тогда подключаем его.
-         $content = ob_get_clean(); //Присваеваем данные из буфера переменной и очищаем буфер (это для того что вид нам сразу не нужен, сначала нам нужно вставить его в шаблон).!!!!!
-      } else { //В противном случаее,
-         throw new \Exception("View {$viewFile} not found", 500); //Выбрасываем исключение.
-      }
-
-      if (false !== $this->layout) { //Условие: если свойство layout тоесть шаблон, не является false-ом,
-         $layoutFile = APP . "/views/layouts/{$this->layout}.php"; //тогда переменной присваеваем путь к шаблону
-         if (is_file($layoutFile)) { //и делаем условие: если переменная $layoutFile является файлом,
-            require_once $layoutFile; //тогда подключаем его,
-         } else { //в противном случаее,
-            throw new \Exception("Layout {$this->layout} not found, 500"); //выбрасывем исключение.
+    }
+    public function render($data){
+        if(is_array($data)) extract($data);
+        $viewFile = APP . "/views/{$this->prefix}{$this->controller}/{$this->view}.php";
+         if(is_file($viewFile)){
+             ob_start();                                                    // копируэм в буфер
+                require_once $viewFile;
+                $content = ob_get_clean();
+         }else{
+             throw new \Exception("Не найден вид {$viewFile}", 500);
          }
-      }
-   }
+         if(false!==$this->layout){
+              $layoutFile = APP . "/views/layouts/{$this->layout}.php";
+             if(is_file($layoutFile)){
+                 require_once $layoutFile;
+             }else{
+                 throw new \Exception("Не найден шаблон {$this->layout}", 500);
+             }
+         }
 
-   public function getMeta() //Создаем публичный метод который будет подключать в разметку DOCTYPE нужные данные.
-   {
-      $output = '<title>' . $this->meta["title"] . '</title>';
-      $output .= '<meta name="description" content="' . $this->meta["desc"] . '">';
-      $output .= '<meta name="keywords" content="' . $this->meta["keywords"] . '">';
-      return $output;
-   }
+    }
+    public function getMeta(){
+        $output  = '<title>' . $this->meta['title'] . '</title>' .PHP_EOL;
+        $output .= '<meta name="description" content="' . $this->meta['desc'] . '">'.PHP_EOL;
+        $output .= '<meta name="keywords" content="' . $this->meta['keywords'] . '">'.PHP_EOL;
+        return $output;
+
+    }
 }

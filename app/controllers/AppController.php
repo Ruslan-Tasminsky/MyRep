@@ -4,6 +4,7 @@ namespace app\controllers; //Прописуем пространство име�
 
 use app\models\AppModel; //Используем модель.
 use app\widgets\Currency\Currency;
+use app\widgets\Currency\CurrencyWidget;
 use ishop\App;
 use ishop\base\Controller; //Используем базовый контроллер.
 use ishop\Cache;
@@ -14,8 +15,8 @@ class AppController extends Controller //Создаем класс которы�
     {
         parent::__construct($route); //Подключаем родительский конструктор.
         new AppModel(); //Создаем объект модели.
-        App::$app->setProperty("currencies", Currency::getCurrencies()); //Обращаемся к классу App, к объкту реестра $app и к методу setProperty который запишет ключ, значение и передаст в метод который вернет все доступные ему данные.
-        App::$app->setProperty("currency", Currency::getCurrency(App::$app->getProperty("currencies")));
+        App::$app->setProperty("currencies", CurrencyWidget::getCurrencies()); //Обращаемся к классу App, к объкту реестра $app и к методу setProperty который запишет ключ, значение и передаст в метод который вернет все доступные ему данные.
+        App::$app->setProperty("currency", CurrencyWidget::getCurrency(App::$app->getProperty("currencies")));
         App::$app->setProperty("cats", self::cacheCategory()); //Обращаемся к классу App, к объкту реестра $app и к методу setProperty который запишет ключ, значение и передаст в метод который вернет все доступные ему данные.
     }
 

@@ -104,19 +104,13 @@ class Productivity extends Base
 		$red->name = 'red';
 		$green->name = 'green';
 		$blue->name = 'blue';
-		$red->thevalue = 'r';
-		$green->thevalue = 'g';
-		$blue->thevalue = 'b';
+		$red->value = 'r';
+		$green->value = 'g';
+		$blue->value = 'b';
 		R::storeAll( array( $red, $green, $blue ) );
 		$look = R::getLook();
 		asrt( ( $look instanceof Look ), TRUE );
-		$str = R::getLook()->look( 'SELECT * FROM color WHERE thevalue != ? ORDER BY thevalue ASC', array( 'g' ),  array( 'thevalue', 'name' ),
-			'<option value="%s">%s</option>', 'strtoupper', "\n"
-		);
-		asrt( $str,
-		"<option value=\"B\">BLUE</option>\n<option value=\"R\">RED</option>"
-		);
-		$str = R::look( 'SELECT * FROM color WHERE thevalue != ? ORDER BY thevalue ASC', array( 'g' ),  array( 'thevalue', 'name' ),
+		$str = R::getLook()->look( 'SELECT * FROM color WHERE value != ? ORDER BY value ASC', array( 'g' ),  array( 'value', 'name' ),
 			'<option value="%s">%s</option>', 'strtoupper', "\n"
 		);
 		asrt( $str,
@@ -207,6 +201,7 @@ class Productivity extends Base
 		$oldBook = $book->fresh();
 		$oldBook->ownPageList;
 		$diff = R::diff($oldBook, $book);
+		print_r($diff);
 	}
 
 	/**

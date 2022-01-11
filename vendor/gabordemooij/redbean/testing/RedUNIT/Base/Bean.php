@@ -3,14 +3,6 @@ namespace RedUNIT\Base;
 
 use RedUNIT\Base as Base;
 use RedBeanPHP\Facade as R;
-use RedBeanPHP\Adapter\DBAdapter;
-use RedBeanPHP\QueryWriter\PostgreSQL;
-use RedBeanPHP\QueryWriter\SQLiteT;
-use RedBeanPHP\QueryWriter\MySQL;
-use RedBeanPHP\QueryWriter\CUBRID;
-use RedBeanPHP\OODB;
-use RedBeanPHP\BeanHelper;
-use RedBeanPHP\Driver\RPDO;
 
 /**
  * Bean
@@ -30,96 +22,6 @@ use RedBeanPHP\Driver\RPDO;
  */
 class Bean extends Base
 {
-	/**
-	 * Test whether we can use findFromSQL to extract beans
-	 * from the result of an SQL query.
-	 */
-	public function testFindFromSQL() {
-		R::nuke();
-		$book = R::dispense('book');
-		$book->title = 'My Book';
-		R::store( $book );
-		$books = R::findFromSQL('book','SELECT *, 100 AS pages FROM book WHERE title = ? ', array('My Book'), array('pages'));
-		asrt(is_array($books), TRUE);
-		asrt(count($books), 1);
-		$book = reset($books);
-		asrt($book->title, 'My Book');
-		asrt(intval($book->info('pages')), 100);
-		asrt(intval($book->info('pages',0)), 100);
-		asrt($book->info('signatures',0), 0);
-		asrt(is_null($book->info('signatures')), TRUE);
-		$data = R::findFromSQL('book','SELECT *, 100 AS pages FROM book WHERE title = ? ', array('My Book'), array('pages'), TRUE);
-		asrt(is_array($data), TRUE);
-		asrt(count($data), 2);
-		$meta  = $data[0];
-		$books = $data[1];
-		asrt(is_array($meta), TRUE);
-		asrt(count($meta), 1);
-		asrt(isset($meta['pages']), TRUE);
-		asrt(intval($meta['pages']), 100);
-		asrt(is_array($books), TRUE);
-		asrt(count($books), 1);
-		$book = reset($books);
-		asrt($book->title, 'My Book');
-		asrt(intval($book->info('pages')), 100);
-		asrt(intval($book->info('pages',0)), 100);
-		asrt($book->info('signatures',0), 0);
-		asrt(is_null($book->info('signatures')), TRUE);
-		$data = R::findFromSQL('book','SELECT *, 100 AS pages FROM book WHERE title = ? AND id = -2 ', array('My Book'), array('pages'), TRUE);
-		asrt(is_array($data), TRUE);
-		asrt(count($data), 2);
-		$meta  = $data[0];
-		$books = $data[1];
-		asrt(is_array($meta), TRUE);
-		asrt(is_array($books), TRUE);
-		asrt(count($meta), 1);
-		asrt(array_key_exists('pages', $meta), TRUE);
-		asrt($meta['pages'],NULL);
-		asrt(count($books), 0);
-		$books = R::findFromSQL('book','SELECT *, 100 AS pages FROM book WHERE title = ? ', array('Not My Book'), array('pages'));
-		asrt(is_array($books), TRUE);
-		asrt(count($books), 0);
-	}
-
-	/**
-	 * Tests whether we can override the __toString() method of
-	 * a bean (for example to display binary data).
-	 */
-	public function testToStringOverride()
-	{
-		$bean = R::dispense('string');
-		$bean->text = '"Hello"';
-		$base64 = strval( $bean );
-		asrt( $base64, 'IkhlbGxvIg==' );
-	}
-
-	/**
-	 * Tests whether we can use RedBeanPHP core objects without
-	 * Facade related objects in a non-static style.
-	 *
-	 * @return void
-	 */
-	public function testLooselyWired()
-	{
-		$pdo = R::getDatabaseAdapter()->getDatabase()->getPDO();
-		$database = new RPDO( $pdo );
-		$adapter = new DBAdapter( $database );
-		if ($this->currentlyActiveDriverID == 'pgsql') $writer = new PostgreSQL( $adapter );
-		if ($this->currentlyActiveDriverID == 'mysql') $writer = new MySQL( $adapter );
-		if ($this->currentlyActiveDriverID == 'sqlite') $writer = new SQLiteT( $adapter );
-		if ($this->currentlyActiveDriverID == 'CUBRID') $writer = new CUBRID( $adapter );
-		$oodb = new OODB( $writer, FALSE );
-		$bean = $oodb->dispense( 'bean' );
-		$bean->name = 'coffeeBean';
-		$id = $oodb->store( $bean );
-		asrt( ( $id > 0 ), TRUE );
-		$bean = $oodb->load( 'bean', $id );
-		asrt( $bean->name, 'coffeeBean' );
-		asrt( $oodb->count( 'bean' ), 1 );
-		$oodb->trash( $bean );
-		asrt( $oodb->count( 'bean' ), 0 );
-	}
-
 	/**
 	 * From github (issue #549):
 	 * Imagine you have a simple Post object, which has a person_id and
@@ -283,9 +185,7 @@ class Bean extends Base
 	}
 
 	/**
-	 * Misc bean tests.
-	 *
-	 * @return void
+	 * Other tests...
 	 */
 	public function testMisc()
 	{
@@ -335,7 +235,7 @@ class Bean extends Base
 		$i = $i->fresh();
 		asrt( $i->customer->city->state->name, 'x' );
 		$i->status = 1;
-		R::freeze( TRUE );
+		R::freeze( true );
 		$logger = R::debug( 1, 1 );
 		//do we properly skip unmodified but tainted parent beans?
 		R::store( $i );
@@ -618,6 +518,7 @@ class Bean extends Base
 		$book->xownPageList[] = R::dispense('page');
 		R::store( $book );
 		asrt( R::count('page'), 3 );
+
 		$ads = R::dispense('ad', 3 );
 		$book = $this->_createBook();
 		$book->alias('magazine')->ownAd = $ads;
@@ -646,6 +547,7 @@ class Bean extends Base
 		R::store( $book );
 		asrt( R::count('ad'), 3 );
 		asrt( R::count('page'), 3 );
+
 		$book = $this->_createBook();
 		$book->sharedTag[] = R::dispense('tag');
 		R::store( $book );
@@ -680,6 +582,7 @@ class Bean extends Base
 		try { R::store( $book ); fail(); }catch(\Exception $e) { pass(); }
 		$book = $book->fresh();
 		asrt( count( $book->ownPage ), 0 );
+
 		$book = $this->_createBook();
 		$firstAd = reset( $book->alias('magazine')->ownAd );
 		$book->alias('magazine')->ownAd[ $firstAd->id ] = NULL;

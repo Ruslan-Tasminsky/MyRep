@@ -47,7 +47,6 @@ addFile( DIR . 'QueryWriter/AQueryWriter.php' );
 addFile( DIR . 'QueryWriter/MySQL.php', 'mysql' );
 addFile( DIR . 'QueryWriter/SQLiteT.php', 'sqlite' );
 addFile( DIR . 'QueryWriter/PostgreSQL.php', 'postgres' );
-addFile( DIR . 'QueryWriter/CUBRID.php' );
 addFile( DIR . 'RedException.php' );
 addFile( DIR . 'RedException/SQL.php' );
 addFile( DIR . 'Repository.php' );
@@ -74,8 +73,6 @@ addFile( DIR . 'Util/QuickExport.php' );
 addFile( DIR . 'Util/MatchUp.php' );
 addFile( DIR . 'Util/Look.php' );
 addFile( DIR . 'Util/Diff.php' );
-addFile( DIR . 'Util/Tree.php' );
-addFile( DIR . 'Util/Feature.php' );
 addFile( DIR . 'Plugin.php' );
 
 $func = file_get_contents(DIR . 'Functions.php');

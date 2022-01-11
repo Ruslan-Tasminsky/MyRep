@@ -76,10 +76,7 @@ class Exceptions extends Base {
 			try {
 				$book = R::load( 'book', 1, 'invalid sql' );
 			} catch( RedException $exception ) {}
-			//not supported for CUBRID
-			if ($this->currentlyActiveDriverID !== 'CUBRID') {
-				asrt( ( $exception instanceof RedException ), TRUE );
-			}
+			asrt( ( $exception instanceof RedException ), TRUE );
 		} else {
 			/* error handling in SQLite is suboptimal */
 			R::freeze( FALSE );
