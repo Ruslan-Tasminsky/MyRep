@@ -1969,3 +1969,9 @@ error:1416F086:SSL routines:tls_process_server_certificate:certificate verify fa
 =================
 [2022-01-11 14:45:30] Текст ошибки: SQLSTATE[01000]: Warning: 1265 Data truncated for column 'stat' at row 1 | Файл: E:\OpenServer\domains\ishop.loc\vendor\gabordemooij\redbean\RedBeanPHP\Driver\RPDO.php | Строка: 191
 =================
+[2022-01-12 18:54:02] Текст ошибки: Страница не найдена | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 44
+=================
+[2022-01-12 18:54:03] Текст ошибки: Страница не найдена | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 44
+=================
+[2022-01-12 20:32:59] Текст ошибки: Метод app\controllers\admin\CategoryController::editAction не найден | Файл: E:\OpenServer\domains\ishop.loc\vendor\ishop\core\Router.php | Строка: 38
+=================
